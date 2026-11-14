@@ -1,7 +1,7 @@
 import Foundation
 
 /// One valley in a list response (`GET /valleys`, `GET /me/valleys`).
-struct ValleySummary: Decodable, Identifiable, Equatable {
+nonisolated struct ValleySummary: Decodable, Identifiable, Equatable {
     let id: Int
     let name: String
     let region: String
@@ -12,8 +12,8 @@ struct ValleySummary: Decodable, Identifiable, Equatable {
     let rainLastHourMM: Double?
     /// Downstream water level change over the last 30 minutes, in m. `nil` means unknown.
     let waterRise30MinM: Double?
-    /// Observation time as sent by the server (Korean time, no offset). Parsed to `Date` in a later step.
-    let observedAt: String?
+    /// When the values were observed. `nil` when there is no observation at all.
+    let observedAt: Date?
     /// `true` when the observation is older than 15 minutes.
     let isStale: Bool
     let isSubscribed: Bool
@@ -31,8 +31,9 @@ struct ValleySummary: Decodable, Identifiable, Equatable {
 }
 
 /// Body of `GET /valleys` and `GET /me/valleys`.
-struct ValleyListResponse: Decodable, Equatable {
-    let updatedAt: String
+nonisolated struct ValleyListResponse: Decodable, Equatable {
+    /// When the server built this response.
+    let updatedAt: Date
     /// Data source text that must be shown on screen.
     let source: String
     let valleys: [ValleySummary]

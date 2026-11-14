@@ -4,7 +4,7 @@ import Testing
 
 struct ValleySummaryTests {
     private func decode(_ json: String) throws -> ValleyListResponse {
-        try JSONDecoder().decode(ValleyListResponse.self, from: Data(json.utf8))
+        try JSONDecoder.yeoulmok().decode(ValleyListResponse.self, from: Data(json.utf8))
     }
 
     @Test func decodesSpecExample() throws {

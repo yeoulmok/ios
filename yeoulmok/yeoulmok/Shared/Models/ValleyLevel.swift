@@ -4,7 +4,7 @@ import Foundation
 ///
 /// Any value the app does not recognize is treated as `.unknown`,
 /// so an unexpected server value can never be shown as `.safe`.
-enum ValleyLevel: String, Decodable, CaseIterable {
+nonisolated enum ValleyLevel: String, Decodable, CaseIterable {
     case safe
     case caution
     case danger
