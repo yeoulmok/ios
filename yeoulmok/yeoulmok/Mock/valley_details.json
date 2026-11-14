@@ -1,0 +1,80 @@
+[
+  {
+    "updated_at": "2026-11-07T22:00", "id": 1, "name": "금대리 계곡",
+    "level": "caution", "summary": "상류에 비가 많이 오고 있어요",
+    "ai_explanation": "상류 관측소의 1시간 강수가 기준을 넘었어요. 하류 수위는 아직 크게 오르지 않았지만, 물이 불어날 수 있어요.",
+    "ai_fallback": false,
+    "observations": [
+      {"type": "rain_1h", "station": "원주 신림(AWS)", "observed_at": "2026-11-07T21:50",
+       "value": 18.0, "unit": "mm", "threshold": 15.0, "note": null},
+      {"type": "water_rise_30m", "station": "원주시(동부교)", "observed_at": "2026-11-07T21:50",
+       "value": 0.06, "unit": "m", "threshold": 0.1, "note": null}
+    ],
+    "actions": ["물가에서 떨어지기", "높은 곳으로 이동 준비"],
+    "disclaimer": "판단 보조 정보이며 공식 재난경보를 대체하지 않습니다.",
+    "source": "자료: 한강홍수통제소, 기상청",
+    "subscribed": true, "stale": false
+  },
+  {
+    "updated_at": "2026-11-07T22:00", "id": 2, "name": "갑천 계곡",
+    "level": "unknown", "summary": "관측 자료가 늦거나 없어 판정할 수 없어요",
+    "ai_explanation": null, "ai_fallback": true,
+    "observations": [
+      {"type": "rain_1h", "station": "횡성 갑천(AWS)", "observed_at": null,
+       "value": null, "unit": "mm", "threshold": 15.0, "note": "강수 자료 지연"},
+      {"type": "water_rise_30m", "station": "횡성(갑천)", "observed_at": null,
+       "value": null, "unit": "m", "threshold": 0.1, "note": "수위 결측"}
+    ],
+    "actions": ["현장 물 상황을 직접 확인하기", "비가 오면 물가에서 떨어지기"],
+    "disclaimer": "판단 보조 정보이며 공식 재난경보를 대체하지 않습니다.",
+    "source": "자료: 한강홍수통제소, 기상청",
+    "subscribed": true, "stale": true
+  },
+  {
+    "updated_at": "2026-11-07T22:00", "id": 3, "name": "안전 예시 계곡",
+    "level": "safe", "summary": "지금은 위험 신호가 없어요",
+    "ai_explanation": null, "ai_fallback": true,
+    "observations": [
+      {"type": "rain_1h", "station": "예시 강수 관측소", "observed_at": "2026-11-07T21:50",
+       "value": 0.0, "unit": "mm", "threshold": 15.0, "note": null},
+      {"type": "water_rise_30m", "station": "예시 수위 관측소", "observed_at": "2026-11-07T21:50",
+       "value": 0.0, "unit": "m", "threshold": 0.1, "note": null}
+    ],
+    "actions": ["상류 날씨 변화에 계속 주의하기"],
+    "disclaimer": "판단 보조 정보이며 공식 재난경보를 대체하지 않습니다.",
+    "source": "자료: 한강홍수통제소, 기상청",
+    "subscribed": false, "stale": false
+  },
+  {
+    "updated_at": "2026-11-07T22:00", "id": 4, "name": "위험 예시 계곡",
+    "level": "danger", "summary": "물이 빠르게 불어날 수 있어요",
+    "ai_explanation": "상류 강수와 하류 수위 상승이 함께 기준을 넘었어요.",
+    "ai_fallback": false,
+    "observations": [
+      {"type": "rain_1h", "station": "예시 강수 관측소", "observed_at": "2026-11-07T21:40",
+       "value": 32.5, "unit": "mm", "threshold": 15.0, "note": null},
+      {"type": "water_rise_30m", "station": "예시 수위 관측소", "observed_at": "2026-11-07T21:40",
+       "value": 0.18, "unit": "m", "threshold": 0.1, "note": null}
+    ],
+    "actions": ["즉시 물에서 나오기", "소지품을 챙겨 높은 곳으로 이동"],
+    "disclaimer": "판단 보조 정보이며 공식 재난경보를 대체하지 않습니다.",
+    "source": "자료: 한강홍수통제소, 기상청",
+    "subscribed": true, "stale": true
+  },
+  {
+    "updated_at": "2026-11-07T22:00", "id": 5, "name": "대피 예시 계곡",
+    "level": "evacuate", "summary": "지금 바로 대피하세요",
+    "ai_explanation": "하류 수위가 30분 사이 크게 올랐어요. 계곡 전체가 빠르게 잠길 수 있어요.",
+    "ai_fallback": false,
+    "observations": [
+      {"type": "rain_1h", "station": "예시 강수 관측소", "observed_at": "2026-11-07T21:50",
+       "value": 55.0, "unit": "mm", "threshold": 15.0, "note": null},
+      {"type": "water_rise_30m", "station": "예시 수위 관측소", "observed_at": "2026-11-07T21:50",
+       "value": 0.42, "unit": "m", "threshold": 0.1, "note": null}
+    ],
+    "actions": ["즉시 높은 곳으로 대피", "계곡을 건너지 않기", "고립되면 119 신고"],
+    "disclaimer": "판단 보조 정보이며 공식 재난경보를 대체하지 않습니다.",
+    "source": "자료: 한강홍수통제소, 기상청",
+    "subscribed": false, "stale": false
+  }
+]
