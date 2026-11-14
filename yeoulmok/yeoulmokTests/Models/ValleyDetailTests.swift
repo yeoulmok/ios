@@ -84,7 +84,7 @@ struct ValleyDetailTests {
     }
 
     @Test func unrecognizedObservationTypeBecomesOther() throws {
-        let observation = try JSONDecoder.yeoulmok().decode(Observation.self, from: Data("""
+        let observation = try JSONDecoder.yeoulmok().decode(ValleyObservation.self, from: Data("""
         {"type": "soil_moisture", "station": "새 관측소", "observed_at": "2026-11-07T21:50",
          "value": 0.3, "unit": "%", "threshold": null, "note": null}
         """.utf8))
