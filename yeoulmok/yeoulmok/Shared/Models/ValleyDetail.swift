@@ -14,7 +14,7 @@ nonisolated struct ValleyDetail: Decodable, Identifiable, Equatable {
     /// `true` when fixed text was used instead of AI text.
     let isAIFallback: Bool
     /// Evidence rows. Can be empty when no station is linked.
-    let observations: [Observation]
+    let observations: [ValleyObservation]
     /// What to do now, in order.
     let actions: [String]
     /// Legally required; must be shown on the detail screen.
@@ -38,7 +38,7 @@ nonisolated struct ValleyDetail: Decodable, Identifiable, Equatable {
 }
 
 /// One evidence row on the detail screen (one station, one measurement).
-nonisolated struct Observation: Decodable, Equatable {
+nonisolated struct ValleyObservation: Decodable, Equatable {
     let kind: ObservationKind
     /// Station name, e.g. "원주 신림(AWS)".
     let station: String

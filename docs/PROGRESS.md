@@ -3,10 +3,12 @@
 최종 갱신: 2026-11-14
 
 ## Now
-- #24 프로젝트 초기 세팅(#29), #27 Mock · API 모델(#30), #1 하단 탭(#31), #2 상태 배지(#32) 완료. #3 출처 표기는 PR 리뷰 중.
+- #24 프로젝트 초기 세팅(#29), #27 Mock · API 모델(#30), #1 하단 탭(#31), #2 상태 배지(#32), #3 출처 표기(#33) 완료. #4 홈 구독 목록은 PR 리뷰 중.
 - 앱 구조: `Shared/Models`(응답 모델), `Shared/Networking`(시각 변환 · 에러), `Shared/Repository`(데이터 약속), `Mock/`(가짜 응답 · Mock 저장소). 화면은 `ValleyRepository`만 보고, 지금은 `MockValleyRepository`를 씁니다.
-- 다음에 할 일: **홈 #4 구독 목록** → #5 · #6.
+- 다음에 할 일: **#5 계곡 추가 진입 · #6 상세 이동**.
 - 공통 부품(`Shared/Components`): `StatusBadge`, `SourceFooter`(서버 `source`가 비거나 `"자료: "`면 기본 문구). 경보 상세(#10)에도 `SourceFooter`를 붙여야 함.
+- 데이터 흐름: `YeoulmokApp`이 저장소를 하나 만들어 `RootView` → 각 화면 → `@Observable` ViewModel로 넘김 (지금은 `MockValleyRepository`). 화면 상태는 `State` enum(loading · loaded · empty · failed).
+- 테스트 환경: `check.sh`가 가끔 "Failed to create a bundle instance"로 실패함 (iPhone 16 Pro, 다른 시뮬레이터로 빌드한 직후). 다시 돌리면 통과. 시뮬레이터 하나만 켜 두고 지켜보는 중.
 - Figma `앱 / 공통 · 컴포넌트`에 배지 5종 · 출처 문구 · 자료 지연 · 토스트 · 오프라인 배너 디자인이 생김. 공통 부품은 이 화면 기준.
 - UI 테스트(`yeoulmokUITests`)는 느려서 `check.sh`에 넣지 않음. PR 전에 따로 실행.
 - 남은 일: #26 App ID 등록 · APNs 키 발급(서연), #25 이슈 정리(범위 축소로 닫을지 결정).
@@ -50,3 +52,4 @@
 - 2026-11-14 — #27 머지(#30). #1: `AppTab`, 탭별 `NavigationStack`, 빈 화면 3개, 탭 UI 테스트 3개. 다음: #2 · #3.
 - 2026-11-14 — #1 머지(#31). #2: 상태별 문구 · 색 · 아이콘, `StatusBadge`(작은/큰, VoiceOver), 판정 불가≠안전 테스트. 다음: #3.
 - 2026-11-14 — #2 머지(#32). #3: `SourceText` 기본값 처리, `SourceFooter`, 홈 · 근처 하단 표기 + UI 테스트, `check.sh` 시뮬레이터 부팅 대기 수정. 다음: #4.
+- 2026-11-14 — #3 머지(#33). #4: 표시 형식, 위험도 정렬, `ValleyCard`, `HomeViewModel`, 저장소 주입, 홈 화면, UI 테스트. `Observation` → `ValleyObservation`(프레임워크 이름 충돌). 다음: #5 · #6.
