@@ -1,0 +1,7 @@
+// Copy this file to Config.xcconfig (gitignored) and fill in real values.
+// In xcconfig, "//" starts a comment, so write "https:/$()/" instead of "https://".
+
+API_BASE_URL = https:/$()/example.com/api
+
+// Merged into the generated Info.plist so the app can read the values above.
+INFOPLIST_FILE = Info.plist
