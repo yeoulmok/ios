@@ -4,10 +4,13 @@ import SwiftUI
 /// Shows whatever `HomeViewModel.state` says; it holds no logic of its own.
 struct HomeView: View {
     @State private var viewModel: HomeViewModel
+    /// Called when "+ 계곡 추가" is tapped. `RootView` decides where to go.
+    private let onAddValley: () -> Void
 
-    init(repository: any ValleyRepository) {
+    init(repository: any ValleyRepository, onAddValley: @escaping () -> Void = {}) {
         // `@State` keeps the same view model while this view stays on screen.
         _viewModel = State(initialValue: HomeViewModel(repository: repository))
+        self.onAddValley = onAddValley
     }
 
     var body: some View {
@@ -44,6 +47,7 @@ struct HomeView: View {
                 ForEach(valleys) { valley in
                     ValleyCard(valley: valley)
                 }
+                AddValleyButton(action: onAddValley)
                 // Figma: the source line sits at the end of the list and scrolls with it.
                 SourceFooter(source: source)
                     .padding(.top, 4)
