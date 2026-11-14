@@ -31,6 +31,19 @@ final class HomeListUITests: XCTestCase {
         XCTAssertTrue(unknown.label.contains("상류 1시간 강수 - · 하류 수위 -"))
     }
 
+    /// APP-HOME-02: "+ 계곡 추가" takes the user to the search tab.
+    @MainActor
+    func testAddValleyOpensSearchTab() {
+        let addButton = app.buttons["계곡 추가"]
+        XCTAssertTrue(addButton.waitForExistence(timeout: 3))
+        XCTAssertTrue(app.tabBars.buttons["홈"].isSelected)
+
+        addButton.tap()
+
+        XCTAssertTrue(app.tabBars.buttons["검색"].isSelected)
+        XCTAssertTrue(app.textFields["search.queryField"].waitForExistence(timeout: 2))
+    }
+
     /// A card is one accessibility element whose label starts with the valley name.
     private func card(named name: String) -> XCUIElement {
         app.descendants(matching: .any)
