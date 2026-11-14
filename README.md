@@ -18,11 +18,24 @@
 
 ## 실행 방법
 
-> Xcode 프로젝트 생성 후 채웁니다.
+요구 사항: Xcode 27 이상, 최소 지원 iOS 17.0
+
+1. 설정 파일을 만듭니다 (아래 "환경 변수").
+2. `yeoulmok/yeoulmok.xcodeproj`를 Xcode로 열고 `yeoulmok` 스킴을 시뮬레이터에서 실행합니다 (⌘R).
+3. 빌드와 테스트를 한 번에 확인하려면 저장소 루트에서 `./scripts/check.sh`를 실행합니다.
 
 ## 환경 변수
 
-> 서버 주소 등 환경별 값은 `Config.xcconfig`에 두고 저장소에 올리지 않습니다 (`.gitignore` 처리됨).
-> 프로젝트 생성 후 `Config.example.xcconfig`와 항목 목록을 여기에 추가합니다.
+서버 주소 등 환경별 값은 `yeoulmok/Config.xcconfig`에 두고 저장소에 올리지 않습니다 (`.gitignore` 처리됨).
+
+```bash
+cp yeoulmok/Config.example.xcconfig yeoulmok/Config.xcconfig
+```
+
+| 키 | 설명 |
+| --- | --- |
+| `API_BASE_URL` | 서버 API 주소 (끝에 `/api` 포함). xcconfig에서는 `//`가 주석이라 `https:/$()/` 형태로 씁니다 |
+
+값은 빌드할 때 `Info.plist`를 거쳐 앱의 `AppConfig`가 읽습니다. 코드에 서버 주소를 직접 쓰지 않습니다.
 
 비밀 값(APNs 키 `.p8`, 토큰 등)은 절대 커밋하지 않습니다.
