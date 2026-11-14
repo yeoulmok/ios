@@ -29,7 +29,8 @@ struct RootView: View {
     @ViewBuilder
     private func screen(for tab: AppTab) -> some View {
         switch tab {
-        case .home: HomeView(repository: repository)
+        case .home:
+            HomeView(repository: repository, onAddValley: { selectedTab = .search })
         case .nearby: NearbyView()
         case .search: SearchView()
         }
