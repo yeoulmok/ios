@@ -16,7 +16,8 @@ nonisolated struct ValleySummary: Decodable, Identifiable, Equatable {
     let observedAt: Date?
     /// `true` when the observation is older than 15 minutes.
     let isStale: Bool
-    let isSubscribed: Bool
+    /// `var` so a repository can return a copy after subscribe / unsubscribe.
+    var isSubscribed: Bool
 
     enum CodingKeys: String, CodingKey {
         case id, name, region, level

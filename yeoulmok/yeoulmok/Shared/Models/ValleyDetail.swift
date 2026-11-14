@@ -21,7 +21,8 @@ nonisolated struct ValleyDetail: Decodable, Identifiable, Equatable {
     let disclaimer: String
     /// Data source text that must be shown on screen.
     let source: String
-    let isSubscribed: Bool
+    /// `var` so a repository can return a copy after subscribe / unsubscribe.
+    var isSubscribed: Bool
     /// `true` when the observation is older than 15 minutes.
     let isStale: Bool
 
