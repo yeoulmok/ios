@@ -7,6 +7,9 @@ import SwiftUI
 /// another tab. `TabView` keeps every tab's view alive, so `@State` inside
 /// a tab (typed search text, scroll position) is kept as well.
 struct RootView: View {
+    /// Passed down to every screen that shows valley data.
+    let repository: any ValleyRepository
+
     @State private var selectedTab: AppTab = .home
 
     var body: some View {
@@ -26,7 +29,7 @@ struct RootView: View {
     @ViewBuilder
     private func screen(for tab: AppTab) -> some View {
         switch tab {
-        case .home: HomeView()
+        case .home: HomeView(repository: repository)
         case .nearby: NearbyView()
         case .search: SearchView()
         }
@@ -34,5 +37,5 @@ struct RootView: View {
 }
 
 #Preview {
-    RootView()
+    RootView(repository: try! MockValleyRepository())
 }
