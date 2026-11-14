@@ -27,3 +27,11 @@ struct ValleyLevelDisplayTests {
         #expect(UIImage(systemName: symbol) != nil)
     }
 }
+
+@MainActor
+struct StatusBadgeTests {
+    @Test(arguments: ValleyLevel.allCases)
+    func voiceOverReadsLevel(level: ValleyLevel) {
+        #expect(StatusBadge(level: level).accessibilityText == "상태: \(level.title)")
+    }
+}
