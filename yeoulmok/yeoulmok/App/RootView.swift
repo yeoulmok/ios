@@ -1,13 +1,7 @@
-//
-//  ContentView.swift
-//  yeoulmok
-//
-//  Created by ETiOn on 11/14/26.
-//
-
 import SwiftUI
 
-struct ContentView: View {
+/// Top-level view of the app. Becomes the tab container (home / nearby / search) in #1.
+struct RootView: View {
     var body: some View {
         VStack {
             Image(systemName: "globe")
@@ -20,5 +14,5 @@ struct ContentView: View {
 }
 
 #Preview {
-    ContentView()
+    RootView()
 }
