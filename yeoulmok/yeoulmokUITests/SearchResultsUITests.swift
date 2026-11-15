@@ -9,6 +9,7 @@ final class SearchResultsUITests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
         app = XCUIApplication()
+        app.launchArguments = ["-useMockData"]
         app.launch()
         app.tabBars.buttons["검색"].tap()
     }

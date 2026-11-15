@@ -8,6 +8,7 @@ final class HomeListUITests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
         app = XCUIApplication()
+        app.launchArguments = ["-useMockData"]
         app.launch()
     }
 
