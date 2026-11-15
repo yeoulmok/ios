@@ -26,9 +26,29 @@ fi
 # sometimes fails with "Failed to create a bundle instance" for the test bundle.
 xcrun simctl bootstatus "$SIMULATOR_ID" -b > /dev/null
 
-xcodebuild test \
-  -scheme yeoulmok \
-  -destination "id=$SIMULATOR_ID" \
-  -only-testing:yeoulmokTests \
-  -quiet
+LOG="$(mktemp -t check)"
+trap 'rm -f "$LOG"' EXIT
+
+run_tests() {
+  xcodebuild test \
+    -scheme yeoulmok \
+    -destination "id=$SIMULATOR_ID" \
+    -only-testing:yeoulmokTests \
+    -quiet 2>&1 | tee "$LOG"
+  return "${PIPESTATUS[0]}"
+}
+
+# Sometimes the simulator cannot load the test bundle ("Failed to create a bundle
+# instance"); running again always passes. The cause is unknown (#39), so retry once
+# for that exact error only. Build errors and failing tests are never retried.
+status=0
+run_tests || status=$?
+if [[ $status -ne 0 ]] && grep -q "Failed to create a bundle instance" "$LOG"; then
+  echo "check.sh: the simulator could not load the test bundle (known flaky error, #39). Retrying once..." >&2
+  status=0
+  run_tests || status=$?
+fi
+if [[ $status -ne 0 ]]; then
+  exit "$status"
+fi
 echo "check.sh: build and unit tests passed"
