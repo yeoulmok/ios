@@ -51,6 +51,73 @@ struct HomeViewModelTests {
 
         #expect(viewModel.state == .failed(message: "연결할 수 없어요"))
     }
+
+    // Pull to refresh (#9): a failed refresh keeps what was received before.
+
+    @Test func failedRefreshKeepsTheList() async throws {
+        let fails = Switch()
+        let repository = StubRepository(list: { query in
+            if fails.isOn { throw URLError(.notConnectedToInternet) }
+            return try await MockValleyRepository().subscribedValleys()
+        })
+        let viewModel = HomeViewModel(repository: repository)
+        await viewModel.load()
+        let shown = viewModel.state
+
+        fails.isOn = true
+        await viewModel.load()
+
+        #expect(viewModel.state == shown)
+        guard case .loaded = viewModel.state else {
+            Issue.record("expected .loaded, got \(viewModel.state)")
+            return
+        }
+    }
+
+    @Test func failedRefreshKeepsTheEmptyState() async throws {
+        let fails = Switch()
+        let empty = ValleyListResponse(updatedAt: .now, source: "자료: 한강홍수통제소, 기상청", valleys: [])
+        let viewModel = HomeViewModel(repository: StubRepository(list: { _ in
+            if fails.isOn { throw URLError(.notConnectedToInternet) }
+            return empty
+        }))
+        await viewModel.load()
+
+        fails.isOn = true
+        await viewModel.load()
+
+        #expect(viewModel.state == .empty(source: "자료: 한강홍수통제소, 기상청"))
+    }
+
+    @Test func refreshAfterAnErrorShowsTheList() async throws {
+        let fails = Switch()
+        fails.isOn = true
+        let viewModel = HomeViewModel(repository: StubRepository(list: { _ in
+            if fails.isOn { throw URLError(.notConnectedToInternet) }
+            return try await MockValleyRepository().subscribedValleys()
+        }))
+        await viewModel.load()
+        #expect(viewModel.state == .failed(message: "연결할 수 없어요"))
+
+        fails.isOn = false
+        await viewModel.load()
+
+        guard case let .loaded(valleys, _) = viewModel.state else {
+            Issue.record("expected .loaded, got \(viewModel.state)")
+            return
+        }
+        #expect(valleys.map(\.id) == [4, 1, 2])
+    }
+}
+
+/// A flag a `@Sendable` stub closure can read while the test flips it.
+private final class Switch: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value = false
+    var isOn: Bool {
+        get { lock.withLock { value } }
+        set { lock.withLock { value = newValue } }
+    }
 }
 
 /// A repository whose every call fails with the given error.
