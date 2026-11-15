@@ -36,7 +36,7 @@ struct RootView: View {
         case .home:
             HomeView(repository: repository, onAddValley: { selectedTab = .search })
         case .nearby: NearbyView()
-        case .search: SearchView()
+        case .search: SearchView(repository: repository)
         }
     }
 }
