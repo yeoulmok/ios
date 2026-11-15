@@ -92,4 +92,19 @@ struct MockValleyRepositoryTests {
         #expect(try await failing.valleys(matching: nil).valleys.count == 5)
         #expect(try await failing.valleyDetail(id: 1).name == "금대리 계곡")
     }
+
+    @Test func offlineAfterFirstLoadSwitchAnswersEachRequestOnce() async throws {
+        let mock = try MockValleyRepository(failsRepeatedLoads: true)
+
+        #expect(try await mock.subscribedValleys().valleys.count == 3)
+        #expect(try await mock.valleyDetail(id: 1).id == 1)
+        #expect(try await mock.valleys(matching: "금대").valleys.count == 1)
+
+        // Asking again is "offline" (pull to refresh, #16).
+        await #expect(throws: URLError.self) { try await mock.subscribedValleys() }
+        await #expect(throws: URLError.self) { try await mock.valleyDetail(id: 1) }
+        await #expect(throws: URLError.self) { try await mock.valleys(matching: "금대") }
+        // A request not asked before still works once.
+        #expect(try await mock.valleyDetail(id: 2).id == 2)
+    }
 }

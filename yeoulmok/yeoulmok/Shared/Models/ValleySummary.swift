@@ -1,7 +1,7 @@
 import Foundation
 
 /// One valley in a list response (`GET /valleys`, `GET /me/valleys`).
-nonisolated struct ValleySummary: Decodable, Identifiable, Equatable {
+nonisolated struct ValleySummary: Codable, Identifiable, Equatable {
     let id: Int
     let name: String
     let region: String
@@ -32,7 +32,7 @@ nonisolated struct ValleySummary: Decodable, Identifiable, Equatable {
 }
 
 /// Body of `GET /valleys` and `GET /me/valleys`.
-nonisolated struct ValleyListResponse: Decodable, Equatable {
+nonisolated struct ValleyListResponse: Codable, Equatable {
     /// When the server built this response.
     let updatedAt: Date
     /// Data source text that must be shown on screen.

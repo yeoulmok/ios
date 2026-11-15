@@ -7,8 +7,8 @@ import SwiftUI
 struct ValleyDetailView: View {
     @State private var viewModel: ValleyDetailViewModel
 
-    init(valleyID: Int, repository: any ValleyRepository) {
-        _viewModel = State(initialValue: ValleyDetailViewModel(valleyID: valleyID, repository: repository))
+    init(valleyID: Int, repository: any ValleyRepository, cache: ValleyCache? = nil) {
+        _viewModel = State(initialValue: ValleyDetailViewModel(valleyID: valleyID, repository: repository, cache: cache))
     }
 
     var body: some View {
@@ -52,6 +52,9 @@ struct ValleyDetailView: View {
     private func loaded(_ detail: ValleyDetail) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
+                if let asOf = viewModel.offlineAsOf {
+                    OfflineBanner(asOf: asOf)
+                }
                 HStack(spacing: 10) {
                     StatusBadge(level: detail.level, size: .large)
                     // Next to the level it qualifies: the judgment uses late data.

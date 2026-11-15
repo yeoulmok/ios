@@ -14,17 +14,24 @@ actor MockValleyRepository: ValleyRepository {
     /// When true, the first list or detail request fails like a lost connection and
     /// later ones work. Lets tests show the common error screen and "다시 시도" (#17).
     private var failsNextLoad: Bool
+    /// When true, each list or detail request works the first time and fails like a
+    /// lost connection after that. Lets tests show the offline banner (#16).
+    private let failsRepeatedLoads: Bool
+    /// Requests already answered, e.g. "subscribed", "detail-1".
+    private var answeredLoads: Set<String> = []
 
-    init(bundle: Bundle = .main, failsSubscriptionChanges: Bool = false, failsFirstLoad: Bool = false) throws {
+    init(bundle: Bundle = .main, failsSubscriptionChanges: Bool = false, failsFirstLoad: Bool = false,
+         failsRepeatedLoads: Bool = false) throws {
         self.failsSubscriptionChanges = failsSubscriptionChanges
         self.failsNextLoad = failsFirstLoad
+        self.failsRepeatedLoads = failsRepeatedLoads
         list = try MockData.valleyList(bundle: bundle)
         details = Dictionary(uniqueKeysWithValues: try MockData.valleyDetails(bundle: bundle).map { ($0.id, $0) })
         subscriptionOrder = list.valleys.filter(\.isSubscribed).map(\.id)
     }
 
     func valleys(matching query: String?) async throws -> ValleyListResponse {
-        try failLoadIfAsked()
+        try failLoadIfAsked(key: "valleys-\(query ?? "")")
         var valleys = list.valleys.map(withCurrentSubscription)
         if let query, !query.isEmpty {
             valleys = valleys.filter {
@@ -36,14 +43,14 @@ actor MockValleyRepository: ValleyRepository {
     }
 
     func subscribedValleys() async throws -> ValleyListResponse {
-        try failLoadIfAsked()
+        try failLoadIfAsked(key: "subscribed")
         let byID = Dictionary(uniqueKeysWithValues: list.valleys.map { ($0.id, $0) })
         let valleys = subscriptionOrder.compactMap { byID[$0] }.map(withCurrentSubscription)
         return ValleyListResponse(updatedAt: list.updatedAt, source: list.source, valleys: valleys)
     }
 
     func valleyDetail(id: Int) async throws -> ValleyDetail {
-        try failLoadIfAsked()
+        try failLoadIfAsked(key: "detail-\(id)")
         guard var detail = details[id] else { throw APIError.valleyNotFound }
         detail.isSubscribed = subscriptionOrder.contains(id)
         return detail
@@ -63,9 +70,12 @@ actor MockValleyRepository: ValleyRepository {
         subscriptionOrder.removeAll { $0 == valleyID }
     }
 
-    private func failLoadIfAsked() throws {
+    private func failLoadIfAsked(key: String) throws {
         if failsNextLoad {
             failsNextLoad = false
+            throw URLError(.notConnectedToInternet)
+        }
+        if failsRepeatedLoads, !answeredLoads.insert(key).inserted {
             throw URLError(.notConnectedToInternet)
         }
     }

@@ -9,6 +9,8 @@ import SwiftUI
 struct RootView: View {
     /// Passed down to every screen that shows valley data.
     let repository: any ValleyRepository
+    /// Last answers saved on the device, shown when the server cannot be reached (#16).
+    var cache: ValleyCache? = nil
 
     @State private var selectedTab: AppTab = .home
 
@@ -19,7 +21,7 @@ struct RootView: View {
                     screen(for: tab)
                         // One rule for every tab: a ValleyRoute opens the alert detail.
                         .navigationDestination(for: ValleyRoute.self) { route in
-                            ValleyDetailView(valleyID: route.valleyID, repository: repository)
+                            ValleyDetailView(valleyID: route.valleyID, repository: repository, cache: cache)
                         }
                 }
                 .tabItem {
@@ -34,7 +36,7 @@ struct RootView: View {
     private func screen(for tab: AppTab) -> some View {
         switch tab {
         case .home:
-            HomeView(repository: repository, onAddValley: { selectedTab = .search })
+            HomeView(repository: repository, cache: cache, onAddValley: { selectedTab = .search })
         case .nearby: NearbyView()
         case .search: SearchView(repository: repository)
         }
