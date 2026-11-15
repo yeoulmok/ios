@@ -15,10 +15,20 @@ struct YeoulmokApp: App {
 
     private static func makeRepository() -> any ValleyRepository {
         do {
-            return try MockValleyRepository()
+            return try MockValleyRepository(failsSubscriptionChanges: Self.launchedWith("-mockSubscriptionFails"))
         } catch {
             // The mock JSON ships inside the app, so this only fails if the build is broken.
             fatalError("Mock data is missing from the app bundle: \(error)")
         }
+    }
+
+    /// Launch options for UI tests and screenshots. Only DEBUG builds read them,
+    /// so a release build can never be started in a broken mode.
+    private static func launchedWith(_ option: String) -> Bool {
+        #if DEBUG
+        return ProcessInfo.processInfo.arguments.contains(option)
+        #else
+        return false
+        #endif
     }
 }

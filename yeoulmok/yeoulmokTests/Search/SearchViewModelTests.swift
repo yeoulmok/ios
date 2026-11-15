@@ -46,7 +46,7 @@ struct SearchViewModelTests {
 
     @Test func serverErrorShowsServerMessage() async {
         let error = APIError(code: "DEVICE_NOT_FOUND", message: "기기 정보를 확인할 수 없어요")
-        let viewModel = SearchViewModel(repository: StubRepository { _ in throw error })
+        let viewModel = SearchViewModel(repository: StubRepository(list: { _ in throw error }))
 
         await viewModel.search()
 
@@ -54,9 +54,9 @@ struct SearchViewModelTests {
     }
 
     @Test func networkErrorShowsConnectionMessage() async {
-        let viewModel = SearchViewModel(repository: StubRepository { _ in
+        let viewModel = SearchViewModel(repository: StubRepository(list: { _ in
             throw URLError(.notConnectedToInternet)
-        })
+        }))
 
         await viewModel.search()
 
@@ -66,10 +66,10 @@ struct SearchViewModelTests {
     @Test func lateAnswerToAnOlderSearchIsIgnored() async throws {
         let mock = try MockValleyRepository()
         // "금" answers slowly, "갑" answers at once.
-        let viewModel = SearchViewModel(repository: StubRepository { query in
+        let viewModel = SearchViewModel(repository: StubRepository(list: { query in
             if query == "금" { try await Task.sleep(for: .milliseconds(300)) }
             return try await mock.valleys(matching: query)
-        })
+        }))
 
         let older = Task { await viewModel.search("금") }
         try await Task.sleep(for: .milliseconds(50))
@@ -82,15 +82,4 @@ struct SearchViewModelTests {
         }
         #expect(valleys.map(\.name) == ["갑천 계곡"])
     }
-}
-
-/// A repository whose list call runs the given closure; other calls are unused here.
-private struct StubRepository: ValleyRepository {
-    let list: @Sendable (String?) async throws -> ValleyListResponse
-
-    func valleys(matching query: String?) async throws -> ValleyListResponse { try await list(query) }
-    func subscribedValleys() async throws -> ValleyListResponse { try await list(nil) }
-    func valleyDetail(id: Int) async throws -> ValleyDetail { throw URLError(.unsupportedURL) }
-    func subscribe(valleyID: Int) async throws {}
-    func unsubscribe(valleyID: Int) async throws {}
 }

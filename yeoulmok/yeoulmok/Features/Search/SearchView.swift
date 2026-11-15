@@ -1,7 +1,8 @@
 import SwiftUI
 
 /// "검색" tab: find valleys by name (APP-SRCH-02, Figma 02 v2 · 02a).
-/// Shows whatever `SearchViewModel.state` says; tapping a row opens its detail.
+/// Shows whatever `SearchViewModel.state` says; tapping a row opens its detail,
+/// tapping its "구독" / "구독중" button toggles the subscription (APP-SRCH-03).
 struct SearchView: View {
     @State private var viewModel: SearchViewModel
     /// Text in the field. Kept in `@State`, so it survives tab switches.
@@ -21,6 +22,8 @@ struct SearchView: View {
                 .padding(.horizontal)
             content
         }
+        // Figma 02b: subscribe/unsubscribe failed. Sits right above the tab bar.
+        .toast(message: $viewModel.toastMessage)
         .navigationTitle("계곡 검색")
         .task {
             // Runs each time the tab appears, so the list stays current.
@@ -72,10 +75,13 @@ struct SearchView: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
                 ForEach(valleys) { valley in
-                    NavigationLink(value: ValleyRoute(valleyID: valley.id)) {
-                        SearchResultRow(valley: valley)
-                    }
-                    .buttonStyle(.plain)
+                    SearchResultRow(
+                        valley: valley,
+                        isPending: viewModel.pendingValleyIDs.contains(valley.id),
+                        onToggleSubscription: {
+                            Task { await viewModel.toggleSubscription(valleyID: valley.id) }
+                        }
+                    )
                     Divider()
                 }
                 // Figma 02 v2: the source line sits at the end of the list.
