@@ -15,15 +15,13 @@ final class SearchResultsUITests: XCTestCase {
 
     @MainActor
     func testRowsShowNameRegionAndSubscription() {
-        let subscribed = row(named: "금대리 계곡")
-        XCTAssertTrue(subscribed.waitForExistence(timeout: 3))
-        XCTAssertTrue(subscribed.label.contains("원주시 판부면"))
-        XCTAssertTrue(subscribed.label.hasSuffix("구독중"))
+        // The row is two parts: name · region (opens detail) and the subscription button.
+        let geumdaeri = row(named: "금대리 계곡")
+        XCTAssertTrue(geumdaeri.waitForExistence(timeout: 3))
+        XCTAssertTrue(geumdaeri.label.contains("원주시 판부면"))
 
-        let notSubscribed = row(named: "안전 예시 계곡")
-        XCTAssertTrue(notSubscribed.exists)
-        XCTAssertTrue(notSubscribed.label.hasSuffix("구독"))
-        XCTAssertFalse(notSubscribed.label.hasSuffix("구독중"))
+        XCTAssertEqual(subscriptionButton(valleyID: 1).label, "금대리 계곡 구독중")
+        XCTAssertEqual(subscriptionButton(valleyID: 3).label, "안전 예시 계곡 구독")
     }
 
     @MainActor
@@ -62,10 +60,18 @@ final class SearchResultsUITests: XCTestCase {
         field.typeText(text + "\n")
     }
 
-    /// A row is one accessibility element whose label starts with the valley name.
+    /// "구독" / "구독중" button of a row (see SearchResultRow).
+    private func subscriptionButton(valleyID: Int) -> XCUIElement {
+        app.buttons["search.subscription.\(valleyID)"]
+    }
+
+    /// The name · region part of a row: its label starts with the valley name.
+    /// The subscription button's label also starts with the name, so it is excluded.
     private func row(named name: String) -> XCUIElement {
         app.descendants(matching: .any)
-            .matching(NSPredicate(format: "label BEGINSWITH %@", name))
+            .matching(NSPredicate(
+                format: "label BEGINSWITH %@ AND NOT (identifier BEGINSWITH 'search.subscription')", name
+            ))
             .firstMatch
     }
 }
