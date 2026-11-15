@@ -2,7 +2,8 @@ import SwiftUI
 
 /// Alert detail (APP-04, Figma 04). Shows whatever `ValleyDetailViewModel.state` says.
 /// #10 builds the header (name, badge, summary) and the loading / error handling;
-/// #11 observations, #12 actions and #13 the disclaimer go between the summary and the source.
+/// #11 adds the observations under the summary; #12 actions and #13 the disclaimer go
+/// between them and the source.
 struct ValleyDetailView: View {
     @State private var viewModel: ValleyDetailViewModel
 
@@ -53,7 +54,9 @@ struct ValleyDetailView: View {
                 Text(detail.summary)
                     .font(.title3.weight(.bold))
                     .accessibilityIdentifier("detail.summary")
-                // #11 observations, #12 actions, #13 disclaimer go here.
+                ObservationSection(observations: detail.observations)
+                    .padding(.top, 4)
+                // #12 actions and #13 disclaimer go here.
                 SourceFooter(source: detail.source)
                     .padding(.top, 12)
             }
