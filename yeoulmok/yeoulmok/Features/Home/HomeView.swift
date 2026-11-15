@@ -31,11 +31,20 @@ struct HomeView: View {
         case let .loaded(valleys, source):
             valleyList(valleys, source: source)
         case let .empty(source):
-            // Temporary until the empty state screen (#18).
-            placeholder("구독한 계곡이 없어요", source: source)
+            pullable {
+                HomeEmptyView(source: source, onAddValley: onAddValley)
+            }
         case let .failed(message):
             // Temporary until the common error screen (#17).
-            placeholder(message, source: nil)
+            pullable {
+                VStack {
+                    Spacer()
+                    Text(message)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    SourceFooter(source: nil)
+                }
+            }
         }
     }
 
@@ -62,18 +71,12 @@ struct HomeView: View {
         .refreshable { await viewModel.load() }
     }
 
-    /// In a scroll view filling the screen, so it can be pulled to refresh too.
-    private func placeholder(_ message: String, source: String?) -> some View {
+    /// A full-screen view in a scroll view, so it can be pulled to refresh too (#9).
+    private func pullable(@ViewBuilder _ content: () -> some View) -> some View {
         ScrollView {
-            VStack {
-                Spacer()
-                Text(message)
-                    .foregroundStyle(.secondary)
-                Spacer()
-                SourceFooter(source: source)
-            }
-            .padding()
-            .containerRelativeFrame([.horizontal, .vertical])
+            content()
+                .padding()
+                .containerRelativeFrame([.horizontal, .vertical])
         }
         .refreshable { await viewModel.load() }
     }
