@@ -2,8 +2,8 @@ import SwiftUI
 
 /// Alert detail (APP-04, Figma 04). Shows whatever `ValleyDetailViewModel.state` says.
 /// #10 builds the header (name, badge, summary) and the loading / error handling;
-/// Under the summary: observations (#11), actions (#12); the disclaimer (#13) goes
-/// between them and the source.
+/// Under the summary: observations (#11), actions (#12), then the disclaimer (#13)
+/// and the data source at the bottom.
 struct ValleyDetailView: View {
     @State private var viewModel: ValleyDetailViewModel
 
@@ -40,7 +40,8 @@ struct ValleyDetailView: View {
                     .foregroundStyle(.secondary)
                     .accessibilityIdentifier("detail.error")
                 Spacer()
-                SourceFooter(source: nil)
+                // The disclaimer and source stay even when the detail failed to load.
+                DetailFooter(disclaimer: nil, source: nil)
             }
             .padding()
             .frame(maxWidth: .infinity)
@@ -58,8 +59,7 @@ struct ValleyDetailView: View {
                     .padding(.top, 4)
                 ActionList(actions: detail.actions)
                     .padding(.top, 8)
-                // #13 disclaimer goes here.
-                SourceFooter(source: detail.source)
+                DetailFooter(disclaimer: detail.disclaimer, source: detail.source)
                     .padding(.top, 12)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
