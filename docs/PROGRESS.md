@@ -3,11 +3,11 @@
 최종 갱신: 2026-11-15
 
 ## Now
-- #24 프로젝트 초기 세팅(#29), #27 Mock · API 모델(#30), #1 하단 탭(#31), #2 상태 배지(#32), #3 출처 표기(#33), #4 홈 구독 목록(#34), #5 계곡 추가 진입(#35), #6 상세 이동(#36), #21 검색 결과(#37), #7 구독 토글(#38), #39 check.sh 재시도(#40) 완료. #8 기기 등록 · 네트워킹은 PR 리뷰 중.
+- #24 프로젝트 초기 세팅(#29), #27 Mock · API 모델(#30), #1 하단 탭(#31), #2 상태 배지(#32), #3 출처 표기(#33), #4 홈 구독 목록(#34), #5 계곡 추가 진입(#35), #6 상세 이동(#36), #21 검색 결과(#37), #7 구독 토글(#38), #39 check.sh 재시도(#40), #8 기기 등록 · 실제 서버 연결(#41) 완료. #10 경보 요약은 PR 리뷰 중.
 - 앱 구조: `Shared/Models`(응답 모델), `Shared/Networking`(시각 변환 · 에러), `Shared/Repository`(데이터 약속), `Mock/`(가짜 응답 · Mock 저장소). `Shared/Device`(device_id 등록 · 보관). 화면은 `ValleyRepository`만 보고, 앱은 `ServerValleyRepository`(실제 서버), 테스트는 `MockValleyRepository`를 씁니다.
-- 다음에 할 일: **상세 #10~#13** → #9 → #18 → #17 → #16 → #14 → #15 → #22 → #19 → #20 → #23 → QA.
+- 다음에 할 일: **상세 #11~#13** → #9 → #18 → #17 → #16 → #14 → #15 → #22 → #19 → #20 → #23 → QA.
 - 화면 이동 규칙: 하위 화면은 "눌렸다"만 클로저로 알리고, 탭 전환은 `RootView`가 결정 (예: `HomeView(onAddValley:)`). 상세 열기는 `NavigationLink(value: ValleyRoute(valleyID:))` 하나로 통일하고, `ValleyRoute` → `ValleyDetailView` 변환은 `RootView`에 한 번만 등록 (근처 · 검색 · 푸시도 같은 방식).
-- 공통 부품(`Shared/Components`): `StatusBadge`, `SourceFooter`(서버 `source`가 비거나 `"자료: "`면 기본 문구). 경보 상세(#10)에도 `SourceFooter`를 붙여야 함. 지금 `ValleyDetailView`는 이름만 불러오는 빈 화면이고, 상세에서 탭 막대 숨기기(Figma 04)도 #10에서.
+- 공통 부품(`Shared/Components`): `StatusBadge`, `SourceFooter`(서버 `source`가 비거나 `"자료: "`면 기본 문구).
 - 데이터 흐름: `YeoulmokApp`이 저장소를 하나 만들어 `RootView` → 각 화면 → `@Observable` ViewModel로 넘김 (기본은 `ServerValleyRepository`). 화면 상태는 `State` enum(loading · loaded · empty · failed).
 - 테스트 환경: `check.sh`가 가끔 "Failed to create a bundle instance"로 실패함 (원인 모름). 이 에러일 때만 한 번 다시 돌리도록 막아 둠(#39). 시뮬레이터가 앱을 못 띄우는 "Launchd job spawn failed"도 #8 작업 중 한 번 나옴 (다시 돌리면 통과, 재시도 대상 아님).
 - `check.sh` 통과만 보지 말고 실행된 테스트 수도 확인할 것: #7 작업 중 `project.xcproj`에 `"opaque-folders": ["Search"]`가 생겨 `yeoulmokTests/Search`가 빌드에서 빠졌는데도 통과로 나옴 (원인 모름, 되돌림).
@@ -17,6 +17,7 @@
 - 서버 연결(#8): `APIClient`(요청 · 에러 구분) → `DeviceRegistrar`(`device_id` 등록은 한 번만, Keychain 보관, `DEVICE_NOT_FOUND`면 다시 등록 후 한 번만 재요청, APNs 토큰은 `PATCH /devices`) → `ServerValleyRepository`. Keychain을 못 읽으면 새로 등록하지 않음(구독이 사라져 보이는 것 방지). 실제 APNs 토큰 전달은 #26 · #19에서.
 - Mock 실행: DEBUG 실행 옵션 `-useMockData`(또는 `-mockSubscriptionFails`). UI 테스트는 전부 이 옵션으로 실행하고, 단위 테스트 호스트 앱도 자동으로 Mock을 씀. 새 UI 테스트도 `-useMockData`를 붙일 것.
 - 서버 동작 메모(서버 담당 확인 필요): 결과가 0개면 `source`가 `"자료: "`로 옴(앱은 `SourceFooter` 기본 문구로 처리됨), `GET /me/valleys`는 모르는 `device_id`에도 `DEVICE_NOT_FOUND` 대신 빈 목록(200).
+- 경보 상세(#10): `ValleyDetailViewModel` 상태는 loading · loaded · failed (빈 상태 없음, 없는 계곡은 서버 에러 문구로 에러 화면). 불러온 뒤 실패하면 기존 내용 유지. 화면은 큰 제목(계곡명) · 큰 배지 · 요약 · `SourceFooter`, 탭 막대 숨김. #11 관측 · #12 행동 요령 · #13 면책은 요약과 출처 사이(`ValleyDetailView`의 주석 위치)에 추가. 테스트 식별자: `detail.summary`, `detail.error`.
 - UI 테스트(`yeoulmokUITests`)는 느려서 `check.sh`에 넣지 않음. PR 전에 따로 실행.
 - 남은 일: #26 App ID 등록 · APNs 키 발급(서연), #25 이슈 정리(범위 축소로 닫을지 결정).
 
@@ -65,3 +66,4 @@
 - 2026-11-15 — #6 머지(#36). #21: `ErrorMessage` 분리, `SearchViewModel`(늦은 응답 무시), `SearchResultRow` · `SubscriptionPill`, `SearchView` · `SearchEmptyView`(02a), UI 테스트 4개. 다음: #7.
 - 2026-11-15 — #21 머지(#37). #7: `toggleSubscription`(낙관적 업데이트, 요청 중 잠금), 공통 `Toast`, 검색 행 분리, Mock 실패 스위치, UI 테스트 2개. 다음: #8.
 - 2026-11-15 — #7 머지(#38), #39 머지(#40). #8: `APIClient` · `StubURLProtocol`, `KeychainDeviceIDStore`, `DeviceRegistrar`(한 번만 등록 · 재등록 · 푸시 토큰), `ServerValleyRepository`, 앱 기본을 실제 서버로, UI 테스트 `-useMockData`, 등록 실패 시 목록 · 검색 · 상세는 ID 없이 요청. 단위 테스트 114개, UI 15개. 다음: #10.
+- 2026-11-15 — #8 머지(#41). #10: `ValleyDetailViewModel`(3-1절 상태), `ValleyDetailView`(제목 · 배지 · 요약 · 출처, 탭 막대 숨김), `StubRepository` 상세 클로저, UI 테스트 3개. 단위 120개, UI 18개. 다음: #11.
