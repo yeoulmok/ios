@@ -23,7 +23,8 @@ struct YeoulmokApp: App {
     }
 
     /// The real server, except in DEBUG runs that ask for the bundled mock data:
-    /// UI tests (`-useMockData`, `-mockSubscriptionFails`, `-mockLoadFailsOnce`) and the unit tests' host app,
+    /// UI tests (`-useMockData`, `-mockSubscriptionFails`, `-mockLoadFailsOnce`,
+    /// `-mockOfflineAfterFirstLoad`) and the unit tests' host app,
     /// so tests never depend on the server's data or register devices on it.
     private static func makeRepository() -> any ValleyRepository {
         if usesMockData {
@@ -36,13 +37,15 @@ struct YeoulmokApp: App {
 
     private static var usesMockData: Bool {
         launchedWith("-useMockData") || launchedWith("-mockSubscriptionFails")
-            || launchedWith("-mockLoadFailsOnce") || isUnitTestHost
+            || launchedWith("-mockLoadFailsOnce") || launchedWith("-mockOfflineAfterFirstLoad")
+            || isUnitTestHost
     }
 
     private static func makeMockRepository() -> any ValleyRepository {
         do {
             return try MockValleyRepository(failsSubscriptionChanges: launchedWith("-mockSubscriptionFails"),
-                                            failsFirstLoad: launchedWith("-mockLoadFailsOnce"))
+                                            failsFirstLoad: launchedWith("-mockLoadFailsOnce"),
+                                            failsRepeatedLoads: launchedWith("-mockOfflineAfterFirstLoad"))
         } catch {
             // The mock JSON ships inside the app, so this only fails if the build is broken.
             fatalError("Mock data is missing from the app bundle: \(error)")
