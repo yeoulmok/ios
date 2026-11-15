@@ -5,24 +5,38 @@ struct YeoulmokApp: App {
     /// The one data source for the whole app. Screens receive it and never
     /// create their own, so the data source is chosen in this one place.
     private let repository: any ValleyRepository = Self.makeRepository()
+    /// Last answers, for when the server cannot be reached (#16).
+    private let cache = Self.makeCache()
 
     var body: some Scene {
         WindowGroup {
-            RootView(repository: repository)
+            RootView(repository: repository, cache: cache)
         }
+    }
+
+    /// The app's Caches folder with the real server. Mock runs (UI tests) get an empty
+    /// folder of their own each launch, so one test never sees another's saved data.
+    private static func makeCache() -> ValleyCache {
+        guard usesMockData else { return .standard() }
+        return ValleyCache(directory: FileManager.default.temporaryDirectory
+            .appending(path: "ValleyCache-\(UUID().uuidString)", directoryHint: .isDirectory))
     }
 
     /// The real server, except in DEBUG runs that ask for the bundled mock data:
     /// UI tests (`-useMockData`, `-mockSubscriptionFails`, `-mockLoadFailsOnce`) and the unit tests' host app,
     /// so tests never depend on the server's data or register devices on it.
     private static func makeRepository() -> any ValleyRepository {
-        if launchedWith("-useMockData") || launchedWith("-mockSubscriptionFails")
-            || launchedWith("-mockLoadFailsOnce") || isUnitTestHost {
+        if usesMockData {
             return makeMockRepository()
         }
         let client = APIClient(baseURL: AppConfig.apiBaseURL)
         let registrar = DeviceRegistrar(client: client, store: KeychainDeviceIDStore())
         return ServerValleyRepository(client: client, registrar: registrar)
+    }
+
+    private static var usesMockData: Bool {
+        launchedWith("-useMockData") || launchedWith("-mockSubscriptionFails")
+            || launchedWith("-mockLoadFailsOnce") || isUnitTestHost
     }
 
     private static func makeMockRepository() -> any ValleyRepository {

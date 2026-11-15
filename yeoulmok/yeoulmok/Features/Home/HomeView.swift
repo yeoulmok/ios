@@ -7,9 +7,9 @@ struct HomeView: View {
     /// Called when "+ 계곡 추가" is tapped. `RootView` decides where to go.
     private let onAddValley: () -> Void
 
-    init(repository: any ValleyRepository, onAddValley: @escaping () -> Void = {}) {
+    init(repository: any ValleyRepository, cache: ValleyCache? = nil, onAddValley: @escaping () -> Void = {}) {
         // `@State` keeps the same view model while this view stays on screen.
-        _viewModel = State(initialValue: HomeViewModel(repository: repository))
+        _viewModel = State(initialValue: HomeViewModel(repository: repository, cache: cache))
         self.onAddValley = onAddValley
     }
 
@@ -32,7 +32,10 @@ struct HomeView: View {
             valleyList(valleys, source: source)
         case let .empty(source):
             pullable {
-                HomeEmptyView(source: source, onAddValley: onAddValley)
+                VStack {
+                    offlineBanner
+                    HomeEmptyView(source: source, onAddValley: onAddValley)
+                }
             }
         case let .failed(message):
             pullable {
@@ -49,6 +52,7 @@ struct HomeView: View {
     private func valleyList(_ valleys: [ValleySummary], source: String) -> some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 12) {
+                offlineBanner
                 Text("구독한 계곡")
                     .font(.headline)
                 ForEach(valleys) { valley in
@@ -67,6 +71,14 @@ struct HomeView: View {
             .padding()
         }
         .refreshable { await viewModel.load() }
+    }
+
+    /// Above the last received data when the latest request failed (APP-COM-07).
+    @ViewBuilder
+    private var offlineBanner: some View {
+        if let asOf = viewModel.offlineAsOf {
+            OfflineBanner(asOf: asOf)
+        }
     }
 
     /// A full-screen view in a scroll view, so it can be pulled to refresh too (#9).
