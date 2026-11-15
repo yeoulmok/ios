@@ -9,6 +9,7 @@ final class SubscriptionToggleUITests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
         app = XCUIApplication()
+        app.launchArguments = ["-useMockData"]
     }
 
     @MainActor
@@ -36,7 +37,7 @@ final class SubscriptionToggleUITests: XCTestCase {
 
     @MainActor
     func testFailureFlipsBackAndShowsToast() {
-        app.launchArguments = ["-mockSubscriptionFails"]
+        app.launchArguments += ["-mockSubscriptionFails"]
         app.launch()
         app.tabBars.buttons["검색"].tap()
         let button = subscriptionButton(valleyID: 1)

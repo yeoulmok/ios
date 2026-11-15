@@ -7,6 +7,7 @@ final class TabNavigationUITests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
         app = XCUIApplication()
+        app.launchArguments = ["-useMockData"]
         app.launch()
     }
 
