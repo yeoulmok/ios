@@ -64,4 +64,4 @@
 - 2026-11-15 — #5 머지(#35). #6: `ValleyRoute`, `RootView` 상세 규칙, 빈 상세 화면, 홈 카드 `NavigationLink`, 이동 · 복귀 UI 테스트. 다음: #21.
 - 2026-11-15 — #6 머지(#36). #21: `ErrorMessage` 분리, `SearchViewModel`(늦은 응답 무시), `SearchResultRow` · `SubscriptionPill`, `SearchView` · `SearchEmptyView`(02a), UI 테스트 4개. 다음: #7.
 - 2026-11-15 — #21 머지(#37). #7: `toggleSubscription`(낙관적 업데이트, 요청 중 잠금), 공통 `Toast`, 검색 행 분리, Mock 실패 스위치, UI 테스트 2개. 다음: #8.
-- 2026-11-15 — #7 머지(#38), #39 머지(#40). #8: `APIClient` · `StubURLProtocol`, `KeychainDeviceIDStore`, `DeviceRegistrar`(한 번만 등록 · 재등록 · 푸시 토큰), `ServerValleyRepository`, 앱 기본을 실제 서버로, UI 테스트 `-useMockData`. 단위 테스트 110개, UI 15개. 다음: #10.
+- 2026-11-15 — #7 머지(#38), #39 머지(#40). #8: `APIClient` · `StubURLProtocol`, `KeychainDeviceIDStore`, `DeviceRegistrar`(한 번만 등록 · 재등록 · 푸시 토큰), `ServerValleyRepository`, 앱 기본을 실제 서버로, UI 테스트 `-useMockData`, 등록 실패 시 목록 · 검색 · 상세는 ID 없이 요청. 단위 테스트 114개, UI 15개. 다음: #10.
