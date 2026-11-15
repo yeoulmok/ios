@@ -17,10 +17,6 @@ final class HomeViewModel {
         case failed(message: String)
     }
 
-    /// Shown when the error does not come from the server (e.g. no network).
-    /// Same wording as the common error screen in Figma.
-    static let connectionErrorMessage = "연결할 수 없어요"
-
     private(set) var state: State = .loading
 
     private let repository: any ValleyRepository
@@ -39,10 +35,8 @@ final class HomeViewModel {
             } else {
                 state = .loaded(valleys: response.valleys.sortedForHome(), source: response.source)
             }
-        } catch let error as APIError {
-            state = .failed(message: error.message)
         } catch {
-            state = .failed(message: Self.connectionErrorMessage)
+            state = .failed(message: ErrorMessage.text(for: error))
         }
     }
 }
