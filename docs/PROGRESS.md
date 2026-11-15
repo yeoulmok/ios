@@ -3,14 +3,15 @@
 최종 갱신: 2026-11-15
 
 ## Now
-- #24 프로젝트 초기 세팅(#29), #27 Mock · API 모델(#30), #1 하단 탭(#31), #2 상태 배지(#32), #3 출처 표기(#33), #4 홈 구독 목록(#34), #5 계곡 추가 진입(#35) 완료. #6 상세 이동은 PR 리뷰 중.
+- #24 프로젝트 초기 세팅(#29), #27 Mock · API 모델(#30), #1 하단 탭(#31), #2 상태 배지(#32), #3 출처 표기(#33), #4 홈 구독 목록(#34), #5 계곡 추가 진입(#35), #6 상세 이동(#36) 완료. #21 검색 결과는 PR 리뷰 중.
 - 앱 구조: `Shared/Models`(응답 모델), `Shared/Networking`(시각 변환 · 에러), `Shared/Repository`(데이터 약속), `Mock/`(가짜 응답 · Mock 저장소). 화면은 `ValleyRepository`만 보고, 지금은 `MockValleyRepository`를 씁니다.
-- 다음에 할 일: **#21 검색 결과** → #7 구독 토글.
+- 다음에 할 일: **#7 구독 토글** (`SubscriptionPill`을 버튼으로, 실패 시 되돌림 + 02b 토스트) → #8 기기 등록 · 네트워킹.
 - 화면 이동 규칙: 하위 화면은 "눌렸다"만 클로저로 알리고, 탭 전환은 `RootView`가 결정 (예: `HomeView(onAddValley:)`). 상세 열기는 `NavigationLink(value: ValleyRoute(valleyID:))` 하나로 통일하고, `ValleyRoute` → `ValleyDetailView` 변환은 `RootView`에 한 번만 등록 (근처 · 검색 · 푸시도 같은 방식).
 - 공통 부품(`Shared/Components`): `StatusBadge`, `SourceFooter`(서버 `source`가 비거나 `"자료: "`면 기본 문구). 경보 상세(#10)에도 `SourceFooter`를 붙여야 함. 지금 `ValleyDetailView`는 이름만 불러오는 빈 화면이고, 상세에서 탭 막대 숨기기(Figma 04)도 #10에서.
 - 데이터 흐름: `YeoulmokApp`이 저장소를 하나 만들어 `RootView` → 각 화면 → `@Observable` ViewModel로 넘김 (지금은 `MockValleyRepository`). 화면 상태는 `State` enum(loading · loaded · empty · failed).
 - 테스트 환경: `check.sh`가 가끔 "Failed to create a bundle instance"로 실패함 (iPhone 16 Pro, 다른 시뮬레이터로 빌드한 직후). 다시 돌리면 통과. iPhone 16 하나만 켜 둔 상태에서도 한 번 발생 — 원인 모름, 재현 안 됨.
 - Figma `앱 / 공통 · 컴포넌트`에 배지 5종 · 출처 문구 · 자료 지연 · 토스트 · 오프라인 배너 디자인이 생김. 공통 부품은 이 화면 기준.
+- 검색 탭: 키보드 "검색"을 누를 때만 요청(`?q=`), 검색창을 비우면 전체 목록. 검색창(APP-SRCH-01, P1) 일부를 #21에서 함께 구현. 검색어 없이 0건일 때 문구 "해당하는 계곡이 없어요"는 임시.
 - UI 테스트(`yeoulmokUITests`)는 느려서 `check.sh`에 넣지 않음. PR 전에 따로 실행.
 - 남은 일: #26 App ID 등록 · APNs 키 발급(서연), #25 이슈 정리(범위 축소로 닫을지 결정).
 
@@ -56,3 +57,4 @@
 - 2026-11-14 — #3 머지(#33). #4: 표시 형식, 위험도 정렬, `ValleyCard`, `HomeViewModel`, 저장소 주입, 홈 화면, UI 테스트. `Observation` → `ValleyObservation`(프레임워크 이름 충돌). 다음: #5 · #6.
 - 2026-11-14 — #4 머지(#34). #5: `AddValleyButton`, 클로저로 검색 탭 이동, UI 테스트. 다음: #6.
 - 2026-11-15 — #5 머지(#35). #6: `ValleyRoute`, `RootView` 상세 규칙, 빈 상세 화면, 홈 카드 `NavigationLink`, 이동 · 복귀 UI 테스트. 다음: #21.
+- 2026-11-15 — #6 머지(#36). #21: `ErrorMessage` 분리, `SearchViewModel`(늦은 응답 무시), `SearchResultRow` · `SubscriptionPill`, `SearchView` · `SearchEmptyView`(02a), UI 테스트 4개. 다음: #7.
