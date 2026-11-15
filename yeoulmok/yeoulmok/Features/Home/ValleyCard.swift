@@ -5,7 +5,7 @@ import SwiftUI
 ///     금대리 계곡                 [위험]
 ///     원주시 판부면
 ///     상류 1시간 강수 18.0mm · 하류 수위 +0.22m/30분
-///     관측 21:50
+///     관측 21:50  🕘 자료 지연   (only when stale)
 struct ValleyCard: View {
     let valley: ValleySummary
 
@@ -23,9 +23,15 @@ struct ValleyCard: View {
             Text(Self.observationText(for: valley))
                 .font(.subheadline)
                 .padding(.top, 2)
-            Text("관측 \(ValleyFormat.observedTime(valley.observedAt))")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            HStack(spacing: 8) {
+                Text("관측 \(ValleyFormat.observedTime(valley.observedAt))")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                // Figma ValleyCard: "관측 21:30  🕘 자료 지연" on one line.
+                if valley.isStale {
+                    StaleLabel()
+                }
+            }
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)

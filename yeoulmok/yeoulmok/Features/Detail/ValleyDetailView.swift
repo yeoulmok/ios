@@ -33,25 +33,34 @@ struct ValleyDetailView: View {
         case let .loaded(detail):
             loaded(detail)
         case let .failed(message):
-            // Temporary until the common error screen (#17).
-            VStack {
-                Spacer()
-                Text(message)
-                    .foregroundStyle(.secondary)
-                    .accessibilityIdentifier("detail.error")
-                Spacer()
-                // The disclaimer and source stay even when the detail failed to load.
-                DetailFooter(disclaimer: nil, source: nil)
+            // Temporary until the common error screen (#17). Can be pulled to retry.
+            ScrollView {
+                VStack {
+                    Spacer()
+                    Text(message)
+                        .foregroundStyle(.secondary)
+                        .accessibilityIdentifier("detail.error")
+                    Spacer()
+                    // The disclaimer and source stay even when the detail failed to load.
+                    DetailFooter(disclaimer: nil, source: nil)
+                }
+                .padding()
+                .containerRelativeFrame([.horizontal, .vertical])
             }
-            .padding()
-            .frame(maxWidth: .infinity)
+            .refreshable { await viewModel.load() }
         }
     }
 
     private func loaded(_ detail: ValleyDetail) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                StatusBadge(level: detail.level, size: .large)
+                HStack(spacing: 10) {
+                    StatusBadge(level: detail.level, size: .large)
+                    // Next to the level it qualifies: the judgment uses late data.
+                    if detail.isStale {
+                        StaleLabel()
+                    }
+                }
                 Text(detail.summary)
                     .font(.title3.weight(.bold))
                     .accessibilityIdentifier("detail.summary")
@@ -65,6 +74,8 @@ struct ValleyDetailView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding()
         }
+        // Keeps the detail while reloading; a failed refresh keeps it too (view model).
+        .refreshable { await viewModel.load() }
     }
 
     private var title: String {

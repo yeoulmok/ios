@@ -59,18 +59,23 @@ struct HomeView: View {
             }
             .padding()
         }
+        .refreshable { await viewModel.load() }
     }
 
+    /// In a scroll view filling the screen, so it can be pulled to refresh too.
     private func placeholder(_ message: String, source: String?) -> some View {
-        VStack {
-            Spacer()
-            Text(message)
-                .foregroundStyle(.secondary)
-            Spacer()
-            SourceFooter(source: source)
+        ScrollView {
+            VStack {
+                Spacer()
+                Text(message)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                SourceFooter(source: source)
+            }
+            .padding()
+            .containerRelativeFrame([.horizontal, .vertical])
         }
-        .padding()
-        .frame(maxWidth: .infinity)
+        .refreshable { await viewModel.load() }
     }
 }
 
