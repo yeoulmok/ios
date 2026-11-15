@@ -8,8 +8,12 @@ actor MockValleyRepository: ValleyRepository {
     private let details: [Int: ValleyDetail]
     /// Subscribed valley ids, oldest first (the server orders `/me/valleys` this way).
     private var subscriptionOrder: [Int]
+    /// When true, every subscribe/unsubscribe fails like a lost connection.
+    /// Lets tests and screenshots show the Figma 02b failure (toast + button flips back).
+    private let failsSubscriptionChanges: Bool
 
-    init(bundle: Bundle = .main) throws {
+    init(bundle: Bundle = .main, failsSubscriptionChanges: Bool = false) throws {
+        self.failsSubscriptionChanges = failsSubscriptionChanges
         list = try MockData.valleyList(bundle: bundle)
         details = Dictionary(uniqueKeysWithValues: try MockData.valleyDetails(bundle: bundle).map { ($0.id, $0) })
         subscriptionOrder = list.valleys.filter(\.isSubscribed).map(\.id)
@@ -39,6 +43,7 @@ actor MockValleyRepository: ValleyRepository {
     }
 
     func subscribe(valleyID: Int) async throws {
+        try failIfAsked()
         try requireValley(valleyID)
         if !subscriptionOrder.contains(valleyID) {
             subscriptionOrder.append(valleyID)
@@ -46,8 +51,13 @@ actor MockValleyRepository: ValleyRepository {
     }
 
     func unsubscribe(valleyID: Int) async throws {
+        try failIfAsked()
         try requireValley(valleyID)
         subscriptionOrder.removeAll { $0 == valleyID }
+    }
+
+    private func failIfAsked() throws {
+        if failsSubscriptionChanges { throw URLError(.notConnectedToInternet) }
     }
 
     private func requireValley(_ id: Int) throws {

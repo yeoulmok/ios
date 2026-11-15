@@ -70,4 +70,15 @@ struct MockValleyRepositoryTests {
             try await repository.unsubscribe(valleyID: 99)
         }
     }
+
+    @Test func failureSwitchFailsChangesAndKeepsSubscriptions() async throws {
+        let failing = try MockValleyRepository(failsSubscriptionChanges: true)
+
+        await #expect(throws: URLError.self) { try await failing.subscribe(valleyID: 3) }
+        await #expect(throws: URLError.self) { try await failing.unsubscribe(valleyID: 1) }
+
+        // Nothing changed: still 1 금대리, 2 갑천, 4 위험 예시.
+        let subscribed = try await failing.subscribedValleys().valleys.map(\.id)
+        #expect(subscribed == [1, 2, 4])
+    }
 }
