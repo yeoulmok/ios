@@ -21,7 +21,7 @@ struct RootView: View {
                     screen(for: tab)
                         // One rule for every tab: a ValleyRoute opens the alert detail.
                         .navigationDestination(for: ValleyRoute.self) { route in
-                            ValleyDetailView(valleyID: route.valleyID, repository: repository)
+                            ValleyDetailView(valleyID: route.valleyID, repository: repository, cache: cache)
                         }
                 }
                 .tabItem {

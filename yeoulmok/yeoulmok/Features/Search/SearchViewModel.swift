@@ -32,6 +32,11 @@ final class SearchViewModel {
     private var latestRequest = 0
     /// The last text passed to `search`, for "다시 시도" (#17).
     private(set) var lastQuery = ""
+    /// Set when the last search failed and older results stay on screen (APP-COM-07):
+    /// their `updated_at`. Search results are not saved on the device.
+    private(set) var offlineAsOf: Date?
+    /// `updated_at` of the results on screen.
+    private var shownUpdatedAt: Date?
 
     init(repository: any ValleyRepository) {
         self.repository = repository
@@ -45,19 +50,31 @@ final class SearchViewModel {
         lastQuery = query
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        let newState: State
+        let result: Result<ValleyListResponse, any Error>
         do {
-            let response = try await repository.valleys(matching: trimmed.isEmpty ? nil : trimmed)
-            newState = response.valleys.isEmpty
-                ? .empty(query: trimmed, source: response.source)
-                : .loaded(valleys: response.valleys, source: response.source)
+            result = .success(try await repository.valleys(matching: trimmed.isEmpty ? nil : trimmed))
         } catch {
-            newState = .failed(message: ErrorMessage.text(for: error))
+            result = .failure(error)
         }
 
         // The user searched again while this one was waiting: keep the newer result.
         guard request == latestRequest else { return }
-        state = newState
+        switch result {
+        case let .success(response):
+            state = response.valleys.isEmpty
+                ? .empty(query: trimmed, source: response.source)
+                : .loaded(valleys: response.valleys, source: response.source)
+            shownUpdatedAt = response.updatedAt
+            offlineAsOf = nil
+        case let .failure(error):
+            switch state {
+            case .loaded, .empty:
+                // Feature spec 3-1: keep what is shown and say how old it is.
+                offlineAsOf = shownUpdatedAt
+            case .loading, .failed:
+                state = .failed(message: ErrorMessage.text(for: error))
+            }
+        }
     }
 
     /// "다시 시도" on the error screen (#17): the same search again.

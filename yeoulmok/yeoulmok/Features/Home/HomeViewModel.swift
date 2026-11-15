@@ -51,7 +51,8 @@ final class HomeViewModel {
             case .loaded, .empty:
                 offlineAsOf = shownUpdatedAt
             case .loading, .failed:
-                if let saved = await cache?.subscribedValleys() {
+                // A server error code is an answer, not lost connection: no fallback.
+                if !(error is APIError), let saved = await cache?.subscribedValleys() {
                     show(saved)
                     offlineAsOf = saved.updatedAt
                 } else {

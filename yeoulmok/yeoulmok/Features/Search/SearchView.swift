@@ -20,6 +20,10 @@ struct SearchView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .padding(.horizontal)
+            if let asOf = viewModel.offlineAsOf {
+                OfflineBanner(asOf: asOf)
+                    .padding(.horizontal)
+            }
             content
         }
         // Figma 02b: subscribe/unsubscribe failed. Sits right above the tab bar.
@@ -58,7 +62,12 @@ struct SearchView: View {
         case let .loaded(valleys, source):
             resultList(valleys, source: source)
         case let .empty(query, source):
-            SearchEmptyView(query: query, source: source)
+            // In a scroll view so it can be pulled to retry, like the banner says.
+            ScrollView {
+                SearchEmptyView(query: query, source: source)
+                    .containerRelativeFrame([.horizontal, .vertical])
+            }
+            .refreshable { await viewModel.retry() }
         case let .failed(message):
             VStack {
                 Spacer()
@@ -90,6 +99,8 @@ struct SearchView: View {
             .padding(.horizontal)
         }
         .scrollDismissesKeyboard(.immediately)
+        // "아래로 당겨 다시 시도" (OfflineBanner): the same search again.
+        .refreshable { await viewModel.retry() }
     }
 }
 
