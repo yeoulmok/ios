@@ -1,7 +1,7 @@
 import Foundation
 
 /// Body of `GET /valleys/{id}` (alert detail screen).
-nonisolated struct ValleyDetail: Decodable, Identifiable, Equatable {
+nonisolated struct ValleyDetail: Codable, Identifiable, Equatable {
     /// When the server built this response. Shown in the "기준 시각" banner.
     let updatedAt: Date
     let id: Int
@@ -38,7 +38,7 @@ nonisolated struct ValleyDetail: Decodable, Identifiable, Equatable {
 }
 
 /// One evidence row on the detail screen (one station, one measurement).
-nonisolated struct ValleyObservation: Decodable, Equatable {
+nonisolated struct ValleyObservation: Codable, Equatable {
     let kind: ObservationKind
     /// Station name, e.g. "원주 신림(AWS)".
     let station: String
@@ -63,7 +63,7 @@ nonisolated struct ValleyObservation: Decodable, Equatable {
 
 /// What an observation measures. Unknown values decode as `.other`,
 /// so a new kind added by the server does not break the whole detail screen.
-nonisolated enum ObservationKind: String, Decodable {
+nonisolated enum ObservationKind: String, Codable {
     /// Upstream rainfall over the last hour.
     case rainLastHour = "rain_1h"
     /// Downstream water level change over the last 30 minutes.
