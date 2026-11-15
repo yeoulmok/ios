@@ -17,6 +17,10 @@ struct RootView: View {
             ForEach(AppTab.allCases) { tab in
                 NavigationStack {
                     screen(for: tab)
+                        // One rule for every tab: a ValleyRoute opens the alert detail.
+                        .navigationDestination(for: ValleyRoute.self) { route in
+                            ValleyDetailView(valleyID: route.valleyID, repository: repository)
+                        }
                 }
                 .tabItem {
                     Label(tab.title, systemImage: tab.systemImage)

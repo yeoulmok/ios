@@ -45,7 +45,12 @@ struct HomeView: View {
                 Text("구독한 계곡")
                     .font(.headline)
                 ForEach(valleys) { valley in
-                    ValleyCard(valley: valley)
+                    // Only says "open this valley"; RootView decides which screen that is.
+                    NavigationLink(value: ValleyRoute(valleyID: valley.id)) {
+                        ValleyCard(valley: valley)
+                    }
+                    // Keep the card's own colors instead of tinting the text blue.
+                    .buttonStyle(.plain)
                 }
                 AddValleyButton(action: onAddValley)
                 // Figma: the source line sits at the end of the list and scrolls with it.
