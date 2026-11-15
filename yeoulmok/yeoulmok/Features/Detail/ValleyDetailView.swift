@@ -51,7 +51,13 @@ struct ValleyDetailView: View {
     private func loaded(_ detail: ValleyDetail) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                StatusBadge(level: detail.level, size: .large)
+                HStack(spacing: 10) {
+                    StatusBadge(level: detail.level, size: .large)
+                    // Next to the level it qualifies: the judgment uses late data.
+                    if detail.isStale {
+                        StaleLabel()
+                    }
+                }
                 Text(detail.summary)
                     .font(.title3.weight(.bold))
                     .accessibilityIdentifier("detail.summary")
