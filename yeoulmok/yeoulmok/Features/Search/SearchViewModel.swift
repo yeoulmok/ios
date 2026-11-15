@@ -17,7 +17,15 @@ final class SearchViewModel {
         case failed(message: String)
     }
 
+    /// Figma 02b toast, shown when subscribing or unsubscribing fails.
+    static let subscriptionFailedMessage = "구독을 바꾸지 못했어요. 잠시 후 다시 시도해 주세요."
+
     private(set) var state: State = .loading
+    /// Valleys whose subscribe/unsubscribe request is still running.
+    /// Their button is disabled, so two requests for one valley never race.
+    private(set) var pendingValleyIDs: Set<Int> = []
+    /// Text for the toast. The view shows it and sets it back to `nil` when it hides.
+    var toastMessage: String?
 
     private let repository: any ValleyRepository
     /// Counts searches, so an older answer that arrives late is thrown away.
@@ -47,5 +55,42 @@ final class SearchViewModel {
         // The user searched again while this one was waiting: keep the newer result.
         guard request == latestRequest else { return }
         state = newState
+    }
+
+    /// "구독" ↔ "구독중" (APP-SRCH-03, Figma 02 · 02b).
+    /// The button flips at once, then the request runs. If it fails, the button
+    /// flips back and the toast appears. No confirmation before unsubscribing.
+    func toggleSubscription(valleyID: Int) async {
+        guard !pendingValleyIDs.contains(valleyID),
+              let wasSubscribed = currentValleys.first(where: { $0.id == valleyID })?.isSubscribed
+        else { return }
+
+        setSubscribed(!wasSubscribed, valleyID: valleyID)
+        pendingValleyIDs.insert(valleyID)
+        defer { pendingValleyIDs.remove(valleyID) }
+
+        do {
+            if wasSubscribed {
+                try await repository.unsubscribe(valleyID: valleyID)
+            } else {
+                try await repository.subscribe(valleyID: valleyID)
+            }
+        } catch {
+            setSubscribed(wasSubscribed, valleyID: valleyID)
+            toastMessage = Self.subscriptionFailedMessage
+        }
+    }
+
+    private var currentValleys: [ValleySummary] {
+        guard case let .loaded(valleys, _) = state else { return [] }
+        return valleys
+    }
+
+    private func setSubscribed(_ isSubscribed: Bool, valleyID: Int) {
+        guard case .loaded(var valleys, let source) = state,
+              let index = valleys.firstIndex(where: { $0.id == valleyID })
+        else { return }
+        valleys[index].isSubscribed = isSubscribed
+        state = .loaded(valleys: valleys, source: source)
     }
 }
