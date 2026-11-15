@@ -13,7 +13,7 @@ final class HomeViewModel {
         case loaded(valleys: [ValleySummary], source: String)
         /// Request succeeded but there are no subscriptions. Screen: #18.
         case empty(source: String)
-        /// Request failed and nothing was loaded before. Screen: #17.
+        /// Request failed and nothing was loaded before. Screen: `ErrorStateView`.
         case failed(message: String)
     }
 

@@ -60,13 +60,12 @@ struct SearchView: View {
         case let .empty(query, source):
             SearchEmptyView(query: query, source: source)
         case let .failed(message):
-            // Temporary until the common error screen (#17).
             VStack {
                 Spacer()
-                Text(message)
-                    .foregroundStyle(.secondary)
+                ErrorStateView(message: message) { await viewModel.retry() }
                 Spacer()
             }
+            .padding()
             .frame(maxWidth: .infinity)
         }
     }

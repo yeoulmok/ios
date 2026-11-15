@@ -12,7 +12,7 @@ final class ValleyDetailViewModel {
         case loaded(ValleyDetail)
         /// Request failed and nothing was loaded before. The message is the
         /// server's `error.message` for an error code (e.g. `VALLEY_NOT_FOUND`),
-        /// otherwise "연결할 수 없어요". Screen: #17.
+        /// otherwise "연결할 수 없어요". Screen: `ErrorStateView`.
         case failed(message: String)
     }
 

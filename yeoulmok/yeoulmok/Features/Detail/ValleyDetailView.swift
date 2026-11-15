@@ -33,13 +33,11 @@ struct ValleyDetailView: View {
         case let .loaded(detail):
             loaded(detail)
         case let .failed(message):
-            // Temporary until the common error screen (#17). Can be pulled to retry.
+            // Common error screen (#17). Can also be pulled to retry.
             ScrollView {
                 VStack {
                     Spacer()
-                    Text(message)
-                        .foregroundStyle(.secondary)
-                        .accessibilityIdentifier("detail.error")
+                    ErrorStateView(message: message) { await viewModel.load() }
                     Spacer()
                     // The disclaimer and source stay even when the detail failed to load.
                     DetailFooter(disclaimer: nil, source: nil)

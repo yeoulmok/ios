@@ -82,4 +82,37 @@ struct SearchViewModelTests {
         }
         #expect(valleys.map(\.name) == ["갑천 계곡"])
     }
+    // "다시 시도" on the error screen (#17).
+
+    @Test func retrySendsTheSameSearchAgain() async throws {
+        let calls = QueryLog()
+        let repository = StubRepository(list: { query in
+            let count = calls.append(query)
+            if count == 1 { throw URLError(.notConnectedToInternet) }
+            return try await MockValleyRepository().valleys(matching: query)
+        })
+        let viewModel = SearchViewModel(repository: repository)
+        await viewModel.search("  금대  ")
+        #expect(viewModel.state == .failed(message: "연결할 수 없어요"))
+
+        await viewModel.retry()
+
+        #expect(calls.queries == ["금대", "금대"])
+        guard case let .loaded(valleys, _) = viewModel.state else {
+            Issue.record("expected .loaded, got \(viewModel.state)")
+            return
+        }
+        #expect(valleys.map(\.name) == ["금대리 계곡"])
+    }
+}
+
+/// Queries the stub received, in order (`nil` stored as "").
+private final class QueryLog: @unchecked Sendable {
+    private let lock = NSLock()
+    private var values: [String] = []
+    var queries: [String] { lock.withLock { values } }
+    /// Returns how many calls there have been, including this one.
+    func append(_ query: String?) -> Int {
+        lock.withLock { values.append(query ?? ""); return values.count }
+    }
 }
