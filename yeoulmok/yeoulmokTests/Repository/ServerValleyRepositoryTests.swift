@@ -104,9 +104,55 @@ struct ServerValleyRepositoryTests {
         await #expect(throws: HTTPStatusError(statusCode: 502)) { try await repository.subscribe(valleyID: 1) }
         #expect(server.requests.count == 1)
     }
+
+    @Test func failedRegistrationStillLoadsValleysWithoutID() async throws {
+        let server = FakeServer(failRegistration: true) { _ in (200, Self.list) }
+        let repository = server.repository(savedID: nil)
+
+        let response = try await repository.valleys(matching: "금대")
+
+        #expect(response.valleys.map(\.name) == ["금대리 계곡"])
+        #expect(server.requests.map(\.line) == ["POST /api/devices", "GET /api/valleys"])
+        #expect(server.requests.last?.deviceID == nil)
+    }
+
+    @Test func failedRegistrationStillLoadsDetailWithoutID() async throws {
+        let server = FakeServer(failRegistration: true) { _ in (404, #"{"error": {"code": "VALLEY_NOT_FOUND", "message": "계곡 정보를 찾을 수 없어요"}}"#) }
+        let repository = server.repository(savedID: nil)
+
+        // The detail request is sent (no ID) and its own answer reaches the screen.
+        await #expect(throws: APIError.valleyNotFound) { try await repository.valleyDetail(id: 1) }
+        #expect(server.requests.map(\.line) == ["POST /api/devices", "GET /api/valleys/1"])
+        #expect(server.requests.last?.deviceID == nil)
+    }
+
+    @Test func failedRegistrationFailsSubscriptionRequests() async {
+        let server = FakeServer(failRegistration: true) { _ in (200, Self.subscribed) }
+        let repository = server.repository(savedID: nil)
+
+        await #expect(throws: (any Error).self) { try await repository.subscribe(valleyID: 1) }
+        await #expect(throws: (any Error).self) { _ = try await repository.subscribedValleys() }
+        // Each request tried to register again; none was sent without an ID.
+        #expect(server.requests.map(\.line) == ["POST /api/devices", "POST /api/devices"])
+    }
+
+    @Test func registrationIsTriedAgainOnTheNextRequest() async throws {
+        let server = FakeServer(failRegistration: true) { _ in (200, Self.list) }
+        let repository = server.repository(savedID: nil)
+        _ = try await repository.valleys(matching: nil)
+
+        server.failRegistration = false
+        _ = try await repository.valleys(matching: nil)
+
+        #expect(server.requests.map(\.line) == [
+            "POST /api/devices", "GET /api/valleys", "POST /api/devices", "GET /api/valleys",
+        ])
+        #expect(server.requests.last?.deviceID == "d_1")
+    }
 }
 
-/// Records requests and answers `/devices` with `d_1`, `d_2`, ...; other paths go to `answer`.
+/// Records requests and answers `/devices` with `d_1`, `d_2`, ... (or 500 while
+/// `failRegistration`); other paths go to `answer`.
 private final class FakeServer: @unchecked Sendable {
     struct Request {
         /// e.g. `"GET /api/valleys"`
@@ -120,9 +166,16 @@ private final class FakeServer: @unchecked Sendable {
     private var issued = 0
     private let answer: @Sendable (Request) -> (Int, String)
     private var client: APIClient!
+    private var registrationFails: Bool
+    /// When true, `POST /devices` answers 500.
+    var failRegistration: Bool {
+        get { lock.withLock { registrationFails } }
+        set { lock.withLock { registrationFails = newValue } }
+    }
 
-    init(answer: @escaping @Sendable (Request) -> (Int, String)) {
+    init(failRegistration: Bool = false, answer: @escaping @Sendable (Request) -> (Int, String)) {
         self.answer = answer
+        self.registrationFails = failRegistration
         client = StubURLProtocol.makeClient { [unowned self] request, _ in
             let recordedRequest = Request(
                 line: "\(request.httpMethod ?? "") \(request.url?.path() ?? "")",
@@ -131,6 +184,7 @@ private final class FakeServer: @unchecked Sendable {
             let (status, body) = lock.withLock { () -> (Int, String) in
                 recorded.append(recordedRequest)
                 if recordedRequest.line == "POST /api/devices" {
+                    if registrationFails { return (500, "Internal Server Error") }
                     issued += 1
                     return (201, #"{"device_id": "d_\#(issued)"}"#)
                 }
