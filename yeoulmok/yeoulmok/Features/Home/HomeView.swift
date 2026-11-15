@@ -35,12 +35,10 @@ struct HomeView: View {
                 HomeEmptyView(source: source, onAddValley: onAddValley)
             }
         case let .failed(message):
-            // Temporary until the common error screen (#17).
             pullable {
                 VStack {
                     Spacer()
-                    Text(message)
-                        .foregroundStyle(.secondary)
+                    ErrorStateView(message: message) { await viewModel.load() }
                     Spacer()
                     SourceFooter(source: nil)
                 }

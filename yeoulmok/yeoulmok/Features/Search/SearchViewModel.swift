@@ -13,7 +13,7 @@ final class SearchViewModel {
         /// Request succeeded but nothing matched (Figma 02a).
         /// `query` is the trimmed search text, empty when there was none.
         case empty(query: String, source: String)
-        /// Request failed and nothing was loaded before. Screen: #17.
+        /// Request failed and nothing was loaded before. Screen: `ErrorStateView`.
         case failed(message: String)
     }
 
@@ -30,6 +30,8 @@ final class SearchViewModel {
     private let repository: any ValleyRepository
     /// Counts searches, so an older answer that arrives late is thrown away.
     private var latestRequest = 0
+    /// The last text passed to `search`, for "다시 시도" (#17).
+    private(set) var lastQuery = ""
 
     init(repository: any ValleyRepository) {
         self.repository = repository
@@ -40,6 +42,7 @@ final class SearchViewModel {
     func search(_ query: String = "") async {
         latestRequest += 1
         let request = latestRequest
+        lastQuery = query
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
 
         let newState: State
@@ -55,6 +58,11 @@ final class SearchViewModel {
         // The user searched again while this one was waiting: keep the newer result.
         guard request == latestRequest else { return }
         state = newState
+    }
+
+    /// "다시 시도" on the error screen (#17): the same search again.
+    func retry() async {
+        await search(lastQuery)
     }
 
     /// "구독" ↔ "구독중" (APP-SRCH-03, Figma 02 · 02b).

@@ -81,4 +81,15 @@ struct MockValleyRepositoryTests {
         let subscribed = try await failing.subscribedValleys().valleys.map(\.id)
         #expect(subscribed == [1, 2, 4])
     }
+
+    @Test func firstLoadFailureSwitchFailsOnlyTheFirstLoad() async throws {
+        let failing = try MockValleyRepository(failsFirstLoad: true)
+
+        await #expect(throws: URLError.self) { try await failing.subscribedValleys() }
+
+        // "다시 시도" (#17) then works, for every kind of load.
+        #expect(try await failing.subscribedValleys().valleys.map(\.id) == [1, 2, 4])
+        #expect(try await failing.valleys(matching: nil).valleys.count == 5)
+        #expect(try await failing.valleyDetail(id: 1).name == "금대리 계곡")
+    }
 }
