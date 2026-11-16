@@ -51,23 +51,3 @@ struct NearbyViewModelTests {
         #expect(SystemLocationPermission.authorization(for: status) == expected)
     }
 }
-
-/// `LocationPermission` whose answer the test chooses.
-private final class FakeLocationPermission: LocationPermission {
-    private(set) var authorization: LocationAuthorization
-    var onChange: ((LocationAuthorization) -> Void)?
-    private(set) var requestCount = 0
-
-    init(_ authorization: LocationAuthorization) {
-        self.authorization = authorization
-    }
-
-    func requestWhenInUse() {
-        requestCount += 1
-    }
-
-    func answer(_ authorization: LocationAuthorization) {
-        self.authorization = authorization
-        onChange?(authorization)
-    }
-}
