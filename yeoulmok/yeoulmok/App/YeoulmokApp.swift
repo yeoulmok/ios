@@ -2,6 +2,10 @@ import SwiftUI
 
 @main
 struct YeoulmokApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+
+    /// The real server's device registration; `nil` in mock runs.
+    private static let registrar: DeviceRegistrar? = makeRegistrar()
     /// The one data source for the whole app. Screens receive it and never
     /// create their own, so the data source is chosen in this one place.
     private let repository: any ValleyRepository = Self.makeRepository()
@@ -14,7 +18,19 @@ struct YeoulmokApp: App {
                 SystemLocationPermission(fixedLocation: Self.launchedWith("-mockLocation")
                     ? SystemLocationPermission.mockLocation : nil)
             })
+            .task { await connectPushTokens() }
         }
+    }
+
+    /// Sends the APNs token to the server whenever iOS gives one (#22). Runs once, when the
+    /// first screen appears: before that no token can have been asked for.
+    private func connectPushTokens() async {
+        guard let registrar = Self.registrar else { return }
+        let receiver = PushTokenReceiver(permission: SystemNotificationPermission()) { token in
+            try await registrar.updatePushToken(token)
+        }
+        appDelegate.pushTokens = receiver
+        await receiver.refreshOnLaunch()
     }
 
     /// The app's Caches folder with the real server. Mock runs (UI tests) get an empty
@@ -30,12 +46,17 @@ struct YeoulmokApp: App {
     /// `-mockOfflineAfterFirstLoad`) and the unit tests' host app,
     /// so tests never depend on the server's data or register devices on it.
     private static func makeRepository() -> any ValleyRepository {
-        if usesMockData {
-            return makeMockRepository()
-        }
-        let client = APIClient(baseURL: AppConfig.apiBaseURL)
-        let registrar = DeviceRegistrar(client: client, store: KeychainDeviceIDStore())
+        // `registrar` is nil exactly when `usesMockData` is true.
+        guard let registrar else { return makeMockRepository() }
         return ServerValleyRepository(client: client, registrar: registrar)
+    }
+
+    /// One client and one registrar, shared by the repository and the push token.
+    private static let client = APIClient(baseURL: AppConfig.apiBaseURL)
+
+    private static func makeRegistrar() -> DeviceRegistrar? {
+        guard !usesMockData else { return nil }
+        return DeviceRegistrar(client: client, store: KeychainDeviceIDStore())
     }
 
     private static var usesMockData: Bool {

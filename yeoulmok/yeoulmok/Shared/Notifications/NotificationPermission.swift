@@ -7,6 +7,8 @@ protocol NotificationPermission: AnyObject {
     /// that it answers right away with the user's earlier choice.
     /// True when notifications are allowed.
     func request() async -> Bool
+    /// True when notifications are allowed now. Never shows a question.
+    func isAllowed() async -> Bool
     /// Asks iOS for this phone's APNs token. The token arrives in the app delegate.
     func registerForPushToken()
 }
@@ -26,7 +28,20 @@ final class SystemNotificationPermission: NotificationPermission {
         }
     }
 
+    func isAllowed() async -> Bool {
+        Self.isAllowed(await UNUserNotificationCenter.current().notificationSettings().authorizationStatus)
+    }
+
     func registerForPushToken() {
         UIApplication.shared.registerForRemoteNotifications()
+    }
+
+    /// "Provisional" (quiet delivery) and "ephemeral" (App Clips) also get pushes.
+    nonisolated static func isAllowed(_ status: UNAuthorizationStatus) -> Bool {
+        switch status {
+        case .authorized, .provisional, .ephemeral: true
+        case .denied, .notDetermined: false
+        @unknown default: false
+        }
     }
 }
