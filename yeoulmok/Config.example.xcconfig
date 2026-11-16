@@ -3,5 +3,11 @@
 
 API_BASE_URL = https:/$()/example.com/api
 
+// Settings screen (APP-SET-02). Public pages and a public address; leave empty until
+// they exist (the row is then shown disabled).
+TERMS_URL = https:/$()/example.com/terms
+PRIVACY_URL = https:/$()/example.com/privacy
+CONTACT_EMAIL = contact@example.com
+
 // Merged into the generated Info.plist so the app can read the values above.
 INFOPLIST_FILE = Info.plist
