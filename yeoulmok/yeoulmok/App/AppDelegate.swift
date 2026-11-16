@@ -1,11 +1,19 @@
 import UIKit
+import UserNotifications
 
-/// Receives what iOS gives the app outside SwiftUI: the APNs token.
-/// Connected with `@UIApplicationDelegateAdaptor` in `YeoulmokApp`.
-final class AppDelegate: NSObject, UIApplicationDelegate {
+/// Receives what iOS gives the app outside SwiftUI: the APNs token, and pushes that
+/// arrive while the app is open. Connected with `@UIApplicationDelegateAdaptor` in `YeoulmokApp`.
+final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     /// Set by `YeoulmokApp` when the first screen appears, before any token is asked for.
     /// `nil` in mock runs, so tests never send a token to the server.
     var pushTokens: PushTokenReceiver?
+
+    func application(_ application: UIApplication,
+                     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
+        // Must be set before launch ends, or a push that opened the app is missed (#20).
+        UNUserNotificationCenter.current().delegate = self
+        return true
+    }
 
     func application(_ application: UIApplication,
                      didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
@@ -17,4 +25,19 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
                      didFailToRegisterForRemoteNotificationsWithError error: any Error) {
         pushTokens?.failed(error)
     }
+
+    /// A push arrived while the app is on screen. iOS shows nothing unless we say so.
+    nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                            willPresent notification: UNNotification) async
+        -> UNNotificationPresentationOptions {
+        PushPresentation.whileOpen
+    }
+}
+
+/// How alert pushes (APP-NOTI-01) appear while the app is open.
+nonisolated enum PushPresentation {
+    /// Same as when the app is closed: a banner, kept in Notification Center, with sound.
+    /// `.sound` only plays when the push has a sound, so the server's silent night-time
+    /// `caution` (no `sound` key, API spec 4) stays silent here too. No badge: the app has none.
+    static let whileOpen: UNNotificationPresentationOptions = [.banner, .list, .sound]
 }
