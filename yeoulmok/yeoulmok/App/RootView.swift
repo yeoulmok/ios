@@ -16,8 +16,10 @@ struct RootView: View {
     /// Remembers the first-launch notification screen (#22). `nil` never shows it
     /// (previews, and mock runs unless they ask with `-notificationOnboarding`).
     var onboardingStore: NotificationOnboardingStore? = nil
+    /// Tapped pushes waiting to open a valley's detail (#20). `nil` in previews.
+    var pushRouter: PushRouter? = nil
 
-    @State private var selectedTab: AppTab = .home
+    @State private var navigation = TabNavigation()
     /// Set when a button on the notification screen is pressed, to leave it.
     @State private var onboardingFinished = false
 
@@ -32,9 +34,9 @@ struct RootView: View {
     }
 
     private var tabs: some View {
-        TabView(selection: $selectedTab) {
+        TabView(selection: $navigation.selected) {
             ForEach(AppTab.allCases) { tab in
-                NavigationStack {
+                NavigationStack(path: path(for: tab)) {
                     screen(for: tab)
                         // One rule for every tab: a ValleyRoute opens the alert detail.
                         .navigationDestination(for: ValleyRoute.self) { route in
@@ -50,13 +52,25 @@ struct RootView: View {
                 .tag(tab)
             }
         }
+        // `initial`: a push that launched the app is already waiting when the tabs appear
+        // (also after the first-launch notification screen).
+        .onChange(of: pushRouter?.pendingValleyID, initial: true) {
+            if let valleyID = pushRouter?.take() {
+                navigation.openDetailFromPush(valleyID: valleyID)
+            }
+        }
+    }
+
+    private func path(for tab: AppTab) -> Binding<NavigationPath> {
+        Binding(get: { navigation.path(for: tab) },
+                set: { navigation.setPath($0, for: tab) })
     }
 
     @ViewBuilder
     private func screen(for tab: AppTab) -> some View {
         switch tab {
         case .home:
-            HomeView(repository: repository, cache: cache, onAddValley: { selectedTab = .search })
+            HomeView(repository: repository, cache: cache, onAddValley: { navigation.selected = .search })
         case .nearby:
             NearbyView(repository: repository, cache: cache, permission: makeLocationPermission())
         case .search: SearchView(repository: repository)
