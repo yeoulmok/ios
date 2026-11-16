@@ -16,6 +16,16 @@ struct HomeView: View {
     var body: some View {
         content
             .navigationTitle("여울목")
+            .toolbar {
+                // Feature spec IA: settings from a gear at the top of home (not in Figma 01).
+                ToolbarItem(placement: .topBarTrailing) {
+                    NavigationLink(value: SettingsRoute()) {
+                        Image(systemName: "gearshape")
+                    }
+                    .accessibilityLabel("설정")
+                    .accessibilityIdentifier("home.settings")
+                }
+            }
             .task {
                 await viewModel.load()
             }
