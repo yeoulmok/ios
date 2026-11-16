@@ -13,10 +13,25 @@ struct RootView: View {
     var cache: ValleyCache? = nil
     /// Nearby tab's location permission (and location). Tests can fix the location.
     var makeLocationPermission: () -> any LocationPermission = { SystemLocationPermission() }
+    /// Remembers the first-launch notification screen (#22). `nil` never shows it
+    /// (previews, and mock runs unless they ask with `-notificationOnboarding`).
+    var onboardingStore: NotificationOnboardingStore? = nil
 
     @State private var selectedTab: AppTab = .home
+    /// Set when a button on the notification screen is pressed, to leave it.
+    @State private var onboardingFinished = false
 
     var body: some View {
+        if let onboardingStore, !onboardingStore.isDone, !onboardingFinished {
+            NotificationOnboardingView(permission: SystemNotificationPermission(), store: onboardingStore) {
+                onboardingFinished = true
+            }
+        } else {
+            tabs
+        }
+    }
+
+    private var tabs: some View {
         TabView(selection: $selectedTab) {
             ForEach(AppTab.allCases) { tab in
                 NavigationStack {
