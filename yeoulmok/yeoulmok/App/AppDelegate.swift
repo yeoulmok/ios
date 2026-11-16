@@ -7,6 +7,8 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     /// Set by `YeoulmokApp` when the first screen appears, before any token is asked for.
     /// `nil` in mock runs, so tests never send a token to the server.
     var pushTokens: PushTokenReceiver?
+    /// Where a tapped push goes; `RootView` opens the detail from it (#20).
+    let pushRouter = PushRouter()
 
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
@@ -31,6 +33,19 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
                                             willPresent notification: UNNotification) async
         -> UNNotificationPresentationOptions {
         PushPresentation.whileOpen
+    }
+
+    /// The user tapped a push: open that valley's alert detail (APP-NOTI-02). Also called
+    /// when the tap launched the app, because the delegate is set in `didFinishLaunching`.
+    nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                            didReceive response: UNNotificationResponse) async {
+        // Only a tap on the notification itself (not, e.g., swiping it away).
+        guard response.actionIdentifier == UNNotificationDefaultActionIdentifier,
+              let valleyID = PushPayload.valleyID(from: response.notification.request.content.userInfo)
+        else { return }
+        await MainActor.run {
+            pushRouter.open(valleyID: valleyID)
+        }
     }
 }
 
