@@ -5,8 +5,9 @@ import SwiftUI
 struct NearbyView: View {
     @State private var viewModel: NearbyViewModel
 
-    init(permission: any LocationPermission = SystemLocationPermission()) {
-        _viewModel = State(initialValue: NearbyViewModel(permission: permission))
+    init(repository: any ValleyRepository, cache: ValleyCache? = nil,
+         permission: any LocationPermission = SystemLocationPermission()) {
+        _viewModel = State(initialValue: NearbyViewModel(permission: permission, repository: repository, cache: cache))
     }
 
     var body: some View {

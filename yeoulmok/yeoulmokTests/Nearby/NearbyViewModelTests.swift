@@ -6,7 +6,7 @@ import Testing
 struct NearbyViewModelTests {
     @Test func firstVisitAsksForPermission() {
         let permission = FakeLocationPermission(.notDetermined)
-        let viewModel = NearbyViewModel(permission: permission)
+        let viewModel = NearbyViewModel(permission: permission, repository: StubRepository())
 
         viewModel.onAppear()
 
@@ -17,14 +17,14 @@ struct NearbyViewModelTests {
     @Test func doesNotAskAgainOnceAnswered() {
         for answered in [LocationAuthorization.allowed, .denied] {
             let permission = FakeLocationPermission(answered)
-            NearbyViewModel(permission: permission).onAppear()
+            NearbyViewModel(permission: permission, repository: StubRepository()).onAppear()
             #expect(permission.requestCount == 0, "\(answered)")
         }
     }
 
     @Test func answersChangeTheScreen() {
         let permission = FakeLocationPermission(.notDetermined)
-        let viewModel = NearbyViewModel(permission: permission)
+        let viewModel = NearbyViewModel(permission: permission, repository: StubRepository())
         viewModel.onAppear()
 
         permission.answer(.denied)
@@ -36,8 +36,8 @@ struct NearbyViewModelTests {
     }
 
     @Test func startsFromTheCurrentAuthorization() {
-        #expect(NearbyViewModel(permission: FakeLocationPermission(.allowed)).state == .allowed)
-        #expect(NearbyViewModel(permission: FakeLocationPermission(.denied)).state == .denied)
+        #expect(NearbyViewModel(permission: FakeLocationPermission(.allowed), repository: StubRepository()).state == .allowed)
+        #expect(NearbyViewModel(permission: FakeLocationPermission(.denied), repository: StubRepository()).state == .denied)
     }
 
     @Test(arguments: [
