@@ -30,9 +30,16 @@ protocol LocationPermission: AnyObject {
 final class SystemLocationPermission: NSObject, LocationPermission, CLLocationManagerDelegate {
     private let manager = CLLocationManager()
     private let requests = LocationRequests()
+    /// When set, `currentLocation()` answers this instead of asking iOS (DEBUG
+    /// `-mockLocation`, for UI tests and screenshots). Permission still comes from iOS.
+    private let fixedLocation: CLLocationCoordinate2D?
     var onChange: ((LocationAuthorization) -> Void)?
 
-    override init() {
+    /// Downtown Wonju, near the mock valleys: closest is "안전 예시 계곡", then "금대리 계곡".
+    static let mockLocation = CLLocationCoordinate2D(latitude: 37.3422, longitude: 127.9202)
+
+    init(fixedLocation: CLLocationCoordinate2D? = nil) {
+        self.fixedLocation = fixedLocation
         super.init()
         manager.delegate = self
     }
@@ -46,8 +53,9 @@ final class SystemLocationPermission: NSObject, LocationPermission, CLLocationMa
     }
 
     func currentLocation() async throws -> CLLocationCoordinate2D {
+        if let fixedLocation { return fixedLocation }
         // `requestLocation()` answers once (or fails after its own timeout), then stops.
-        try await requests.wait { manager.requestLocation() }
+        return try await requests.wait { manager.requestLocation() }
     }
 
     nonisolated func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {

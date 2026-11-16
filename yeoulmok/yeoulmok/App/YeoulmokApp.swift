@@ -10,7 +10,10 @@ struct YeoulmokApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootView(repository: repository, cache: cache)
+            RootView(repository: repository, cache: cache, makeLocationPermission: {
+                SystemLocationPermission(fixedLocation: Self.launchedWith("-mockLocation")
+                    ? SystemLocationPermission.mockLocation : nil)
+            })
         }
     }
 
@@ -64,6 +67,8 @@ struct YeoulmokApp: App {
 
     /// Launch options for UI tests and screenshots. Only DEBUG builds read them,
     /// so a release build can never be started in a broken mode.
+    /// `-mockLocation` fixes the nearby tab's location (`SystemLocationPermission.mockLocation`);
+    /// the permission still comes from iOS.
     private static func launchedWith(_ option: String) -> Bool {
         #if DEBUG
         return ProcessInfo.processInfo.arguments.contains(option)

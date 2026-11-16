@@ -51,6 +51,22 @@ struct NearbyValleysTests {
         #expect(abs(meters - 11_100) < 111)
     }
 
+    @Test func sameInputAlwaysGivesTheSameDistance() {
+        // CLLocation.distance(from:) did not (see NearbyValleys.distanceMeters).
+        let wonju = CLLocationCoordinate2D(latitude: 37.3422, longitude: 127.9202)
+        let gapcheon = CLLocationCoordinate2D(latitude: 37.548, longitude: 128.104)
+        let first = NearbyValleys.distanceMeters(from: wonju, to: gapcheon)
+        for _ in 0..<100 {
+            #expect(NearbyValleys.distanceMeters(from: wonju, to: gapcheon) == first)
+        }
+    }
+
+    @Test func oneDegreeOfLatitudeIsAbout111Km() {
+        let meters = NearbyValleys.distanceMeters(from: .init(latitude: 37, longitude: 128),
+                                                  to: .init(latitude: 38, longitude: 128))
+        #expect(abs(meters - 111_195) < 1)
+    }
+
     @Test(arguments: [
         (1_234.0, "1.2km"),
         (400.0, "0.4km"),
