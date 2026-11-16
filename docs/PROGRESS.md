@@ -3,9 +3,9 @@
 최종 갱신: 2026-11-16
 
 ## Now
-- #24 프로젝트 초기 세팅(#29), #27 Mock · API 모델(#30), #1 하단 탭(#31), #2 상태 배지(#32), #3 출처 표기(#33), #4 홈 구독 목록(#34), #5 계곡 추가 진입(#35), #6 상세 이동(#36), #21 검색 결과(#37), #7 구독 토글(#38), #39 check.sh 재시도(#40), #8 기기 등록 · 실제 서버 연결(#41), #10 경보 요약(#42), #11 관측 정보(#43), #12 행동 요령(#44), #13 면책 문구(#45) 완료 (경보 상세 P0 완성), #9 새로고침 · 자료 지연(#46), #18 구독 없음 상태(#47), #17 공통 에러 화면(#48), #16 통신 불가 시 마지막 상태(#49) 완료. #14 위치 권한은 PR 리뷰 중.
+- #24 프로젝트 초기 세팅(#29), #27 Mock · API 모델(#30), #1 하단 탭(#31), #2 상태 배지(#32), #3 출처 표기(#33), #4 홈 구독 목록(#34), #5 계곡 추가 진입(#35), #6 상세 이동(#36), #21 검색 결과(#37), #7 구독 토글(#38), #39 check.sh 재시도(#40), #8 기기 등록 · 실제 서버 연결(#41), #10 경보 요약(#42), #11 관측 정보(#43), #12 행동 요령(#44), #13 면책 문구(#45) 완료 (경보 상세 P0 완성), #9 새로고침 · 자료 지연(#46), #18 구독 없음 상태(#47), #17 공통 에러 화면(#48), #16 통신 불가 시 마지막 상태(#49), #14 위치 권한(#50) 완료. #15 주변 계곡 목록은 PR 리뷰 중.
 - 앱 구조: `Shared/Models`(응답 모델), `Shared/Networking`(시각 변환 · 에러), `Shared/Repository`(데이터 약속), `Mock/`(가짜 응답 · Mock 저장소). `Shared/Device`(device_id 등록 · 보관). 화면은 `ValleyRepository`만 보고, 앱은 `ServerValleyRepository`(실제 서버), 테스트는 `MockValleyRepository`를 씁니다.
-- 다음에 할 일: **#15 주변 계곡 목록** → #22 → #19 → #20 → #23 → QA.
+- 다음에 할 일: **#22 알림 권한 요청** → #19 → #20 → #23 → QA.
 - 화면 이동 규칙: 하위 화면은 "눌렸다"만 클로저로 알리고, 탭 전환은 `RootView`가 결정 (예: `HomeView(onAddValley:)`). 상세 열기는 `NavigationLink(value: ValleyRoute(valleyID:))` 하나로 통일하고, `ValleyRoute` → `ValleyDetailView` 변환은 `RootView`에 한 번만 등록 (근처 · 검색 · 푸시도 같은 방식).
 - 공통 부품(`Shared/Components`): `StatusBadge`, `SourceFooter`(서버 `source`가 비거나 `"자료: "`면 기본 문구).
 - 데이터 흐름: `YeoulmokApp`이 저장소를 하나 만들어 `RootView` → 각 화면 → `@Observable` ViewModel로 넘김 (기본은 `ServerValleyRepository`). 화면 상태는 `State` enum(loading · loaded · empty · failed).
@@ -25,7 +25,8 @@
 - 홈 빈 상태(#18): `HomeEmptyView`(Figma 01b 문구 그대로, `water.waves` 아이콘, '계곡 추가하기' → 검색 탭, 출처 유지). 홈의 빈 상태 · 에러 화면은 `pullable { }` 도우미(전체 화면 + 당겨서 새로고침). **안내 문구 "위험할 때 알림을 보내드려요"는 푸시(#19) 이후 QA 때 확인.**
 - 공통 에러 화면(#17): `ErrorStateView`(받아 둔 데이터가 없을 때). 연결 오류는 "연결할 수 없어요" + "인터넷 연결을 확인해 주세요.", 서버 에러 코드는 서버 `message`만(`ErrorContent`). '다시 시도'는 같은 요청(홈 · 상세 `load`, 검색 `retry()` = 마지막 검색어), 진행 중 스피너 + 비활성. Figma의 "마지막으로 받은 정보는 …기준" 줄은 #16에서. 재현: DEBUG 실행 옵션 `-mockLoadFailsOnce`(첫 목록 · 상세 요청만 실패).
 - 통신 불가 시 마지막 상태(#16): 실패했는데 받아 둔 정보가 있으면 화면 유지 + `OfflineBanner`("연결할 수 없어 M월 d일 HH:mm 기준 정보를 보여드려요", 시각은 응답 `updated_at`). 홈 목록 · 상세는 `ValleyCache`(Caches 폴더 JSON)에 저장해 앱을 다시 켜도 표시, 검색은 앱이 켜진 동안만. **결정(사람): 저장본은 기한 없이 보여 주고 기준 시각을 항상 표시.** 저장본은 연결 문제일 때만 사용(서버 에러 코드면 에러 화면). Mock 실행은 실행마다 빈 캐시 폴더. 재현: `-mockOfflineAfterFirstLoad`(요청마다 처음 한 번만 성공). 앱 재시작 후 저장본 표시는 손으로 확인 필요.
-- 위치 권한(#14): 근처 탭에 처음 들어갈 때만 iOS 질문 창(`NSLocationWhenInUseUsageDescription`은 `yeoulmok/Info.plist`). `LocationPermission` 프로토콜 + `SystemLocationPermission`(CLLocationManager), `NearbyViewModel` 상태는 askingPermission · allowed · denied(제한됨도 거부로). 거부면 `LocationDeniedView`(Figma 03b 문구 그대로, "설정 열기" → `openSettingsURLString`). 허용 화면은 #15 전까지 임시. **시뮬레이터에서 "설정 열기"가 앱 설정이 아닌 "Apps" 목록을 엶 — 실제 기기 확인 필요.** 권한 질문 창 앱 이름이 "yeoulmok"(영문)으로 나옴 — 출시 전 결정 필요. UI 테스트는 `resetAuthorizationStatus` 전에 앱을 한 번 켜야 초기화가 확실히 적용됨.
+- 위치 권한(#14): 근처 탭에 처음 들어갈 때만 iOS 질문 창(`NSLocationWhenInUseUsageDescription`은 `yeoulmok/Info.plist`). `LocationPermission` 프로토콜 + `SystemLocationPermission`(CLLocationManager), `NearbyViewModel` 상태는 askingPermission · allowed · denied(제한됨도 거부로). 거부면 `LocationDeniedView`(Figma 03b 문구 그대로, "설정 열기" → `openSettingsURLString`).  **시뮬레이터에서 "설정 열기"가 앱 설정이 아닌 "Apps" 목록을 엶 — 실제 기기 확인 필요.** 권한 질문 창 앱 이름이 "yeoulmok"(영문)으로 나옴 — 출시 전 결정 필요. UI 테스트는 `resetAuthorizationStatus` 전에 앱을 한 번 켜야 초기화가 확실히 적용됨.
+- 주변 계곡 목록(#15): 위치를 한 번 받고(`requestLocation()`, 동시 요청은 `LocationRequests`로 하나로) `GET /valleys` 전체에서 가까운 5개(`NearbyValleys`, 반경 제한 없음). 거리는 하버사인 공식으로 직접 계산 — `CLLocation.distance(from:)`가 같은 두 점에 다른 값을 줘서 새로고침 때 28.0km ↔ 28.1km로 바뀌었음. 표기는 항상 km 소수 한 자리(50m 미만은 `0.0km`, 그대로 둘지 결정 필요). 행 = 계곡명 · 거리 · 배지, 늦은 자료면 거리 옆 `StaleLabel`. 실패 규칙은 홈과 같고, 전체 목록을 `ValleyCache`(`valleys.json`)에 저장해 오프라인이어도 지금 위치로 다시 정렬(**결정(사람): 기한 없이, 기준 시각 항상 표시**). 새로고침 때 위치를 못 받으면 목록 유지(배너 없음). Figma 03의 지도는 이슈 범위 밖이라 넣지 않음. 임시 문구: "현재 위치를 확인할 수 없어요", "주변에 계곡이 없어요". 재현: DEBUG `-mockLocation`(원주 시내 고정, 순서 3 · 1 · 4 · 2 · 5).
 - UI 테스트(`yeoulmokUITests`)는 느려서 `check.sh`에 넣지 않음. PR 전에 따로 실행.
 - 남은 일: #26 App ID 등록 · APNs 키 발급(서연), #25 이슈 정리(범위 축소로 닫을지 결정).
 
@@ -83,3 +84,4 @@
 - 2026-11-15 — #18 머지(#47). #17: `ErrorStateView` · `ErrorContent`, 홈 · 검색 · 상세 연결, `SearchViewModel.retry()`, `-mockLoadFailsOnce`, UI 테스트 1개. 단위 140개, UI 28개. 다음: #16.
 - 2026-11-15 — #17 머지(#48). #16: 모델 Codable + `ValleyCache`, `OfflineBanner`, 홈 · 상세 · 검색 오프라인 규칙, 검색 당겨서 새로고침, `-mockOfflineAfterFirstLoad`, UI 테스트 2개. 단위 158개, UI 30개. 다음: #14.
 - 2026-11-16 — #16 머지(#49). #14: `LocationPermission` · `SystemLocationPermission`, `NearbyViewModel`(단위 테스트 5개), `NearbyView` · `LocationDeniedView`(03b), UI 테스트 3개(거부 · 허용 · 다시 묻지 않음). 단위 163개, UI 33개. 다음: #15.
+- 2026-11-16 — #14 머지(#50). #15: `NearbyValleys`(하버사인), `currentLocation` · `LocationRequests`, `NearbyViewModel` 목록 · 실패 규칙, `ValleyCache.allValleys`, `NearbyRow`, `-mockLocation`, UI 테스트 3개. 단위 188개, UI 36개. 다음: #22.

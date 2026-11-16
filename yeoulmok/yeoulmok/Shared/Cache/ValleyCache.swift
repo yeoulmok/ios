@@ -29,6 +29,16 @@ actor ValleyCache {
         write(response, to: "subscribed.json")
     }
 
+    /// `GET /valleys` without a search word (nearby, #15). Every valley with its
+    /// coordinates, so the nearby list can be rebuilt for wherever the user is now.
+    func allValleys() -> ValleyListResponse? {
+        read(ValleyListResponse.self, from: "valleys.json")
+    }
+
+    func saveAllValleys(_ response: ValleyListResponse) {
+        write(response, to: "valleys.json")
+    }
+
     /// `GET /valleys/{id}` (alert detail).
     func detail(id: Int) -> ValleyDetail? {
         read(ValleyDetail.self, from: "detail-\(id).json")

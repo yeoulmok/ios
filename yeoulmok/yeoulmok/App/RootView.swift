@@ -11,6 +11,8 @@ struct RootView: View {
     let repository: any ValleyRepository
     /// Last answers saved on the device, shown when the server cannot be reached (#16).
     var cache: ValleyCache? = nil
+    /// Nearby tab's location permission (and location). Tests can fix the location.
+    var makeLocationPermission: () -> any LocationPermission = { SystemLocationPermission() }
 
     @State private var selectedTab: AppTab = .home
 
@@ -37,7 +39,8 @@ struct RootView: View {
         switch tab {
         case .home:
             HomeView(repository: repository, cache: cache, onAddValley: { selectedTab = .search })
-        case .nearby: NearbyView()
+        case .nearby:
+            NearbyView(repository: repository, cache: cache, permission: makeLocationPermission())
         case .search: SearchView(repository: repository)
         }
     }
