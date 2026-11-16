@@ -40,6 +40,9 @@ struct RootView: View {
                         .navigationDestination(for: ValleyRoute.self) { route in
                             ValleyDetailView(valleyID: route.valleyID, repository: repository, cache: cache)
                         }
+                        .navigationDestination(for: SettingsRoute.self) { _ in
+                            SettingsView()
+                        }
                 }
                 .tabItem {
                     Label(tab.title, systemImage: tab.systemImage)
