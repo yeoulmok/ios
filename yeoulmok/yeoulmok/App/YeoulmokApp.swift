@@ -19,8 +19,13 @@ struct YeoulmokApp: App {
             RootView(repository: repository, cache: cache, makeLocationPermission: {
                 SystemLocationPermission(fixedLocation: Self.launchedWith("-mockLocation")
                     ? SystemLocationPermission.mockLocation : nil)
-            }, onboardingStore: onboardingStore)
-            .task { await connectPushTokens() }
+            }, onboardingStore: onboardingStore, pushRouter: appDelegate.pushRouter)
+            .task {
+                if let valleyID = Self.mockPushValleyID {
+                    appDelegate.pushRouter.open(valleyID: valleyID)
+                }
+                await connectPushTokens()
+            }
         }
     }
 
@@ -33,6 +38,19 @@ struct YeoulmokApp: App {
         }
         appDelegate.pushTokens = receiver
         await receiver.refreshOnLaunch()
+    }
+
+    /// DEBUG `-mockPushValleyID <id>`: acts as if a push for that valley was tapped at
+    /// launch (UI tests cannot send pushes). Only the number after the option is read.
+    private static var mockPushValleyID: Int? {
+        #if DEBUG
+        let arguments = ProcessInfo.processInfo.arguments
+        guard let index = arguments.firstIndex(of: "-mockPushValleyID"),
+              arguments.indices.contains(index + 1) else { return nil }
+        return Int(arguments[index + 1])
+        #else
+        return nil
+        #endif
     }
 
     /// Mock runs skip the notification screen, so UI tests start on the tabs; they ask

@@ -7,6 +7,8 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     /// Set by `YeoulmokApp` when the first screen appears, before any token is asked for.
     /// `nil` in mock runs, so tests never send a token to the server.
     var pushTokens: PushTokenReceiver?
+    /// Where a tapped push goes; `RootView` opens the detail from it (#20).
+    let pushRouter = PushRouter()
 
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
@@ -26,11 +28,34 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         pushTokens?.failed(error)
     }
 
+    // The two methods below use the completion-handler versions, not `async`. With `async`,
+    // Swift calls iOS's completion handler off the main thread, and UIKit stops the app
+    // (seen when tapping a push while the app was in the background). Here the handlers
+    // are called right away, on the thread iOS called us on.
+
     /// A push arrived while the app is on screen. iOS shows nothing unless we say so.
-    nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter,
-                                            willPresent notification: UNNotification) async
-        -> UNNotificationPresentationOptions {
-        PushPresentation.whileOpen
+    nonisolated func userNotificationCenter(
+        _ center: UNUserNotificationCenter, willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        completionHandler(PushPresentation.whileOpen)
+    }
+
+    /// The user tapped a push: open that valley's alert detail (APP-NOTI-02). Also called
+    /// when the tap launched the app, because the delegate is set in `didFinishLaunching`.
+    nonisolated func userNotificationCenter(
+        _ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        // Only a tap on the notification itself (not, e.g., swiping it away).
+        if response.actionIdentifier == UNNotificationDefaultActionIdentifier,
+           let valleyID = PushPayload.valleyID(from: response.notification.request.content.userInfo) {
+            // The router lives on the main actor; RootView opens the detail when it changes.
+            Task { @MainActor in
+                pushRouter.open(valleyID: valleyID)
+            }
+        }
+        completionHandler()
     }
 }
 
