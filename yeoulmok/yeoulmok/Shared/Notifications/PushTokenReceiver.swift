@@ -28,8 +28,12 @@ final class PushTokenReceiver {
     /// The token from `application(_:didRegisterForRemoteNotificationsWithDeviceToken:)`.
     /// A failed send is not retried now: the next launch asks iOS again and resends.
     func received(_ deviceToken: Data) async {
+        // Success is logged too (never the token itself), so a real-device check can see
+        // in Console that the token reached the server.
+        logger.notice("Got a push token")
         do {
             try await send(Self.hexString(deviceToken))
+            logger.notice("Push token is on the server")
         } catch {
             logger.error("Push token not sent: \(error.localizedDescription)")
         }
