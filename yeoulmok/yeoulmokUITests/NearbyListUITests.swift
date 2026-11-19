@@ -1,7 +1,7 @@
 import XCTest
 
-/// APP-NEAR-02: the nearby tab lists the closest valleys with distance and status,
-/// and a row opens that valley's alert detail.
+/// APP-NEAR-02 · 03: the nearby tab shows the closest valleys on a map and as a list
+/// with distance and status; a row or a map card opens that valley's alert detail.
 /// `-mockLocation` puts the user in downtown Wonju (`SystemLocationPermission.mockLocation`),
 /// so with the mock valleys the order is 3 · 1 · 4 · 2 · 5.
 final class NearbyListUITests: XCTestCase {
@@ -48,6 +48,22 @@ final class NearbyListUITests: XCTestCase {
         XCTAssertTrue(app.navigationBars["금대리 계곡"].waitForExistence(timeout: 3))
     }
 
+    /// APP-NEAR-03 (#58): the map shows "내 위치" and the same valleys as the list.
+    @MainActor
+    func testMapShowsUserAndEveryListedValley() {
+        launch()
+        XCTAssertTrue(app.descendants(matching: .any)["nearby.map"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.descendants(matching: .any)["nearby.map.user"].waitForExistence(timeout: 3))
+        for id in [3, 1, 4, 2, 5] {
+            XCTAssertTrue(pin(id).waitForExistence(timeout: 3), "pin \(id)")
+        }
+        XCTAssertEqual(pin(1).label, "금대리 계곡 주의")
+        XCTAssertEqual(pin(2).label, "갑천 계곡 판정 불가")
+    }
+
+    // #58 pin → card → detail is checked by hand (PR screenshots): XCUITest taps on
+    // MapKit annotations do not reach MapKit's selection, while real taps do.
+
     @MainActor
     func testRefreshFailureKeepsListWithBanner() {
         launch(["-mockOfflineAfterFirstLoad"])
@@ -64,6 +80,10 @@ final class NearbyListUITests: XCTestCase {
     }
 
     private var banner: XCUIElement { app.descendants(matching: .any)["offlineBanner"] }
+
+    private func pin(_ id: Int) -> XCUIElement {
+        app.descendants(matching: .any)["nearby.map.pin.\(id)"]
+    }
 
     private func row(_ id: Int) -> XCUIElement {
         app.descendants(matching: .any)["nearby.row.\(id)"].firstMatch

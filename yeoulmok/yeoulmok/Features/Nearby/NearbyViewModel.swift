@@ -36,6 +36,9 @@ final class NearbyViewModel {
     /// Set when the last request failed and older valley data is shown (APP-COM-07):
     /// that data's `updated_at`. Distances still use the current location.
     private(set) var offlineAsOf: Date?
+    /// Where the distances on the list were measured from. The map shows this point
+    /// as "내 위치" (#58), so the map and the distances always agree. Never sent anywhere.
+    private(set) var userLocation: CLLocationCoordinate2D?
 
     private let permission: any LocationPermission
     private let repository: any ValleyRepository
@@ -103,6 +106,7 @@ final class NearbyViewModel {
 
     private func show(_ response: ValleyListResponse, from location: CLLocationCoordinate2D) {
         shownResponse = response
+        userLocation = location
         let nearby = NearbyValleys.closest(to: location, in: response.valleys)
         list = nearby.isEmpty
             ? .empty(source: response.source)

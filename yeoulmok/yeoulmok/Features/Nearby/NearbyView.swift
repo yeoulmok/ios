@@ -1,7 +1,8 @@
 import SwiftUI
 
-/// "근처" tab (APP-NEAR-01 · 02, Figma 03 · 03b). Asks for location permission the
-/// first time, then lists the closest valleys. The location never leaves the phone.
+/// "근처" tab (APP-NEAR-01 · 02 · 03, Figma 03 · 03b). Asks for location permission the
+/// first time, then shows the closest valleys on a map (#58) and as a list.
+/// The location never leaves the phone.
 struct NearbyView: View {
     /// Temporary wording until QA (not in Figma): the server has no valleys at all.
     static let emptyText = "주변에 계곡이 없어요"
@@ -61,6 +62,10 @@ struct NearbyView: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 12) {
                     offlineBanner
+                    // #58: the same valleys on a map, above the list.
+                    if let user = viewModel.userLocation {
+                        NearbyMapView(user: user, valleys: valleys)
+                    }
                     header
                     ForEach(valleys) { nearby in
                         NavigationLink(value: ValleyRoute(valleyID: nearby.id)) {
@@ -132,6 +137,8 @@ struct NearbyView: View {
 ///     11.3km  🕘 자료 지연   (only when stale)
 struct NearbyRow: View {
     let nearby: NearbyValley
+    /// The map's card (#58) reuses this row with its own identifier.
+    var identifier: String?
 
     var body: some View {
         HStack(alignment: .center) {
@@ -157,7 +164,7 @@ struct NearbyRow: View {
         .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(.separator)))
         // VoiceOver reads the whole row at once: "금대리 계곡, 11.3km, 주의".
         .accessibilityElement(children: .combine)
-        .accessibilityIdentifier("nearby.row.\(nearby.id)")
+        .accessibilityIdentifier(identifier ?? "nearby.row.\(nearby.id)")
     }
 }
 
