@@ -52,32 +52,37 @@ final class HomeViewModel {
     /// - nothing shown but a saved answer exists (e.g. after a restart): show it, set `offlineAsOf`;
     /// - nothing at all: `.failed` (common error screen).
     func load() async {
-        // Found while the list loads, so the card does not change after it appears.
+        // The location is found while the list loads. The list and the featured card are
+        // then set together, so the list never jumps down when the card appears (#59).
         async let place = currentLocationIfAllowed()
-        await loadList()
-        await updateFeatured(near: await place)
-    }
-
-    private func loadList() async {
+        let result: Result<ValleyListResponse, any Error>
         do {
-            let response = try await repository.subscribedValleys()
-            show(response)
+            result = .success(try await repository.subscribedValleys())
+        } catch {
+            result = .failure(error)
+        }
+        let here = await place
+
+        switch result {
+        case let .success(response):
+            show(response, near: here)
             offlineAsOf = nil
             await cache?.saveSubscribedValleys(response)
-        } catch {
+        case let .failure(error):
             switch state {
             case .loaded, .empty:
                 offlineAsOf = shownUpdatedAt
             case .loading, .failed:
                 // A server error code is an answer, not lost connection: no fallback.
                 if !(error is APIError), let saved = await cache?.subscribedValleys() {
-                    show(saved)
+                    show(saved, near: here)
                     offlineAsOf = saved.updatedAt
                 } else {
                     state = .failed(message: ErrorMessage.text(for: error))
                 }
             }
         }
+        await loadFeaturedDetail()
     }
 
     private func currentLocationIfAllowed() async -> CLLocationCoordinate2D? {
@@ -85,36 +90,31 @@ final class HomeViewModel {
         return try? await location.currentLocation()
     }
 
-    /// Picks the featured valley from the list on screen and loads its detail.
-    /// A failed detail keeps the card (values without gauges), or uses a saved copy.
-    private func updateFeatured(near place: CLLocationCoordinate2D?) async {
-        guard case let .loaded(valleys, _) = state,
-              let picked = FeaturedValley.pick(from: valleys, near: place) else {
-            featured = nil
-            featuredDetail = nil
-            return
-        }
-        featured = picked
-        if featuredDetail?.id != picked.valley.id {
+    /// Sets the list and the featured valley in one step (no `await` in between).
+    private func show(_ response: ValleyListResponse, near place: CLLocationCoordinate2D?) {
+        shownUpdatedAt = response.updatedAt
+        let valleys = response.valleys.sortedForHome()
+        state = valleys.isEmpty
+            ? .empty(source: response.source)
+            : .loaded(valleys: valleys, source: response.source)
+        featured = FeaturedValley.pick(from: valleys, near: place)
+        if featuredDetail?.id != featured?.valley.id {
             featuredDetail = nil
         }
+    }
+
+    /// The featured valley's detail, for its thresholds and summary. A failure keeps the
+    /// card (values without gauges), or uses a saved copy.
+    private func loadFeaturedDetail() async {
+        guard let id = featured?.valley.id else { return }
         do {
-            let detail = try await repository.valleyDetail(id: picked.valley.id)
+            let detail = try await repository.valleyDetail(id: id)
             featuredDetail = detail
             await cache?.saveDetail(detail)
         } catch {
             if featuredDetail == nil {
-                featuredDetail = await cache?.detail(id: picked.valley.id)
+                featuredDetail = await cache?.detail(id: id)
             }
-        }
-    }
-
-    private func show(_ response: ValleyListResponse) {
-        shownUpdatedAt = response.updatedAt
-        if response.valleys.isEmpty {
-            state = .empty(source: response.source)
-        } else {
-            state = .loaded(valleys: response.valleys.sortedForHome(), source: response.source)
         }
     }
 }
