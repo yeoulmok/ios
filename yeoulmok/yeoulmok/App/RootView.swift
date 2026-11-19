@@ -70,7 +70,8 @@ struct RootView: View {
     private func screen(for tab: AppTab) -> some View {
         switch tab {
         case .home:
-            HomeView(repository: repository, cache: cache, onAddValley: { navigation.selected = .search })
+            HomeView(repository: repository, cache: cache, location: makeLocationPermission(),
+                     onAddValley: { navigation.selected = .search })
         case .nearby:
             NearbyView(repository: repository, cache: cache, permission: makeLocationPermission())
         case .search: SearchView(repository: repository)

@@ -7,9 +7,10 @@ struct HomeView: View {
     /// Called when "+ 계곡 추가" is tapped. `RootView` decides where to go.
     private let onAddValley: () -> Void
 
-    init(repository: any ValleyRepository, cache: ValleyCache? = nil, onAddValley: @escaping () -> Void = {}) {
+    init(repository: any ValleyRepository, cache: ValleyCache? = nil,
+         location: (any LocationPermission)? = nil, onAddValley: @escaping () -> Void = {}) {
         // `@State` keeps the same view model while this view stays on screen.
-        _viewModel = State(initialValue: HomeViewModel(repository: repository, cache: cache))
+        _viewModel = State(initialValue: HomeViewModel(repository: repository, cache: cache, location: location))
         self.onAddValley = onAddValley
     }
 
@@ -63,6 +64,15 @@ struct HomeView: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 12) {
                 offlineBanner
+                // APP-HOME-05 (#59): one valley, large, with its numbers.
+                if let featured = viewModel.featured {
+                    NavigationLink(value: ValleyRoute(valleyID: featured.valley.id)) {
+                        FeaturedValleyCard(featured: featured, detail: viewModel.featuredDetail)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("home.featured")
+                    .padding(.bottom, 8)
+                }
                 Text("구독한 계곡")
                     .font(.headline)
                 ForEach(valleys) { valley in

@@ -13,6 +13,8 @@ struct ThresholdGauge: View {
     let thresholdText: String?
     let value: Double?
     let threshold: Double?
+    /// A change to show as ↑ / ↓ next to the value (water rise), or `nil` for none.
+    var change: Double?
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var shown = false
@@ -24,6 +26,9 @@ struct ThresholdGauge: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 Spacer()
+                if change != nil {
+                    ChangeIndicator(change: change)
+                }
                 Text(valueText)
                     .font(.subheadline.weight(.semibold))
                     .monospacedDigit()
