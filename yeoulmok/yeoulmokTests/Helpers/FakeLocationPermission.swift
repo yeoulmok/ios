@@ -9,6 +9,8 @@ final class FakeLocationPermission: LocationPermission {
     /// What `currentLocation()` returns next.
     var location: Result<CLLocationCoordinate2D, any Error> = .success(.init(latitude: 37, longitude: 128))
     private(set) var locationCount = 0
+    /// When set, `currentLocation()` waits this long first (a slow or missing GPS fix).
+    var delay: Duration?
 
     init(_ authorization: LocationAuthorization) {
         self.authorization = authorization
@@ -25,6 +27,9 @@ final class FakeLocationPermission: LocationPermission {
 
     func currentLocation() async throws -> CLLocationCoordinate2D {
         locationCount += 1
+        if let delay {
+            try await Task.sleep(for: delay)
+        }
         return try location.get()
     }
 }

@@ -37,12 +37,20 @@ final class HomeViewModel {
     /// Used only when the user already allowed it (on the nearby tab); home never asks.
     /// The location stays on the phone.
     private let location: (any LocationPermission)?
+    /// How long home waits for the location before showing the list without it (#67).
+    /// Without a limit, a location that never comes (indoors, a simulator without one)
+    /// kept home on the spinner.
+    private let locationTimeout: Duration
+
+    static let defaultLocationTimeout: Duration = .milliseconds(1500)
 
     init(repository: any ValleyRepository, cache: ValleyCache? = nil,
-         location: (any LocationPermission)? = nil) {
+         location: (any LocationPermission)? = nil,
+         locationTimeout: Duration = defaultLocationTimeout) {
         self.repository = repository
         self.cache = cache
         self.location = location
+        self.locationTimeout = locationTimeout
     }
 
     /// Loads subscribed valleys, also for pull to refresh (#9).
@@ -85,9 +93,19 @@ final class HomeViewModel {
         await loadFeaturedDetail()
     }
 
+    /// The location, or `nil` when it is not allowed, fails, or takes longer than
+    /// `locationTimeout` (#67). A late location is ignored; the list is not held back.
     private func currentLocationIfAllowed() async -> CLLocationCoordinate2D? {
         guard let location, location.authorization == .allowed else { return nil }
-        return try? await location.currentLocation()
+        let timeout = locationTimeout
+        return await withCheckedContinuation { continuation in
+            let answer = FirstAnswer(continuation)
+            Task { answer.give(try? await location.currentLocation()) }
+            Task {
+                try? await Task.sleep(for: timeout)
+                answer.give(nil)
+            }
+        }
     }
 
     /// Sets the list and the featured valley in one step (no `await` in between).
@@ -116,5 +134,19 @@ final class HomeViewModel {
                 featuredDetail = await cache?.detail(id: id)
             }
         }
+    }
+}
+
+/// Resumes a continuation with whichever answer comes first; later ones are ignored (#67).
+private final class FirstAnswer {
+    private var continuation: CheckedContinuation<CLLocationCoordinate2D?, Never>?
+
+    init(_ continuation: CheckedContinuation<CLLocationCoordinate2D?, Never>) {
+        self.continuation = continuation
+    }
+
+    func give(_ value: CLLocationCoordinate2D?) {
+        continuation?.resume(returning: value)
+        continuation = nil
     }
 }
