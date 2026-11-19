@@ -16,8 +16,16 @@ final class ValleyDetailViewModel {
         case failed(message: String)
     }
 
+    /// Toast text when subscribing or unsubscribing fails (Figma 02b, same as #7).
+    static let subscriptionFailedMessage = "구독을 바꾸지 못했어요. 잠시 후 다시 시도해 주세요."
+
     let valleyID: Int
     private(set) var state: State = .loading
+    /// The subscribe/unsubscribe request is still running. The button is disabled,
+    /// so two requests never race.
+    private(set) var isSubscriptionPending = false
+    /// Text for the toast. The view shows it and sets it back to `nil` when it hides.
+    var toastMessage: String?
     /// Set when the last request failed and an older detail is shown (APP-COM-07):
     /// its `updated_at`, for "○월 ○일 ○○:○○ 기준". `nil` when the detail is fresh.
     private(set) var offlineAsOf: Date?
@@ -54,5 +62,38 @@ final class ValleyDetailViewModel {
             }
             state = .failed(message: ErrorMessage.text(for: error))
         }
+    }
+
+    /// "구독" ↔ "구독중" (APP-DTL-06, #57). Same rules as the search list had (#7):
+    /// the button flips at once, then the request runs. If it fails, the button flips
+    /// back and the toast appears. No confirmation before unsubscribing.
+    func toggleSubscription() async {
+        guard !isSubscriptionPending, case let .loaded(detail) = state else { return }
+        let wasSubscribed = detail.isSubscribed
+
+        setSubscribed(!wasSubscribed)
+        isSubscriptionPending = true
+        defer { isSubscriptionPending = false }
+
+        do {
+            if wasSubscribed {
+                try await repository.unsubscribe(valleyID: valleyID)
+            } else {
+                try await repository.subscribe(valleyID: valleyID)
+            }
+            // The saved copy (shown when offline) should not show the old state.
+            if case let .loaded(updated) = state {
+                await cache?.saveDetail(updated)
+            }
+        } catch {
+            setSubscribed(wasSubscribed)
+            toastMessage = Self.subscriptionFailedMessage
+        }
+    }
+
+    private func setSubscribed(_ isSubscribed: Bool) {
+        guard case var .loaded(detail) = state else { return }
+        detail.isSubscribed = isSubscribed
+        state = .loaded(detail)
     }
 }

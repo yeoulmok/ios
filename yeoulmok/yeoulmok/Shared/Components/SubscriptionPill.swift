@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// "구독중" / "구독" pill on the right of a search row (Figma 02 v2).
-/// Display only for now; #7 (APP-SRCH-03) makes it a toggle button.
+/// "구독중" / "구독" pill (Figma 02 v2). Shown at the top right of the alert
+/// detail, where the subscription is changed (APP-DTL-06, #57).
 struct SubscriptionPill: View {
     let isSubscribed: Bool
 
