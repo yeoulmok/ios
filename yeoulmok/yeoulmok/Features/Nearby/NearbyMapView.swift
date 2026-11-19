@@ -3,8 +3,9 @@ import SwiftUI
 
 /// Map above the nearby list (APP-NEAR-03, #58). Shows the same valleys as the list,
 /// each as its status badge, and "내 위치" where the distances were measured from.
-/// Tapping a badge shows that valley's row at the bottom of the map; tapping the row
-/// opens its detail. Tapping the same badge again hides the row.
+/// Tapping a badge selects it (MapKit's own selection) and shows that valley's row at
+/// the bottom of the map; tapping the row opens its detail. Tapping the map elsewhere
+/// clears the selection and hides the row.
 ///
 /// The location never leaves the phone. The map pictures themselves come from Apple Maps.
 struct NearbyMapView: View {
@@ -23,7 +24,7 @@ struct NearbyMapView: View {
     }
 
     var body: some View {
-        Map(position: $position) {
+        Map(position: $position, selection: $selectedID) {
             Annotation("내 위치", coordinate: user) {
                 UserDot()
             }
@@ -33,6 +34,7 @@ struct NearbyMapView: View {
                 Annotation(nearby.valley.name, coordinate: coordinate(of: nearby)) {
                     pin(for: nearby)
                 }
+                .tag(nearby.id)
             }
         }
         .mapControls {
@@ -63,18 +65,16 @@ struct NearbyMapView: View {
         .accessibilityIdentifier("nearby.map")
     }
 
+    /// Not a `Button`: MapKit handles the tap and sets `selectedID` (the `tag` above).
     private func pin(for nearby: NearbyValley) -> some View {
-        Button {
-            selectedID = selectedID == nearby.id ? nil : nearby.id
-        } label: {
-            StatusBadge(level: nearby.valley.level)
-                .scaleEffect(selectedID == nearby.id ? 1.25 : 1)
-                .shadow(color: .black.opacity(0.25), radius: 2, y: 1)
-        }
-        .buttonStyle(.plain)
-        // VoiceOver: "금대리 계곡 주의".
-        .accessibilityLabel("\(nearby.valley.name) \(nearby.valley.level.title)")
-        .accessibilityIdentifier("nearby.map.pin.\(nearby.id)")
+        StatusBadge(level: nearby.valley.level)
+            .scaleEffect(selectedID == nearby.id ? 1.25 : 1)
+            .shadow(color: .black.opacity(0.25), radius: 2, y: 1)
+            // VoiceOver: "금대리 계곡 주의".
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("\(nearby.valley.name) \(nearby.valley.level.title)")
+            .accessibilityAddTraits(.isButton)
+            .accessibilityIdentifier("nearby.map.pin.\(nearby.id)")
     }
 
     private func coordinate(of nearby: NearbyValley) -> CLLocationCoordinate2D {
