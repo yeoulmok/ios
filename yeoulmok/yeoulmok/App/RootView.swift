@@ -59,6 +59,17 @@ struct RootView: View {
                 navigation.openDetailFromPush(valleyID: valleyID)
             }
         }
+        // #60: a 위험 · 대피 push covers everything until "확인했습니다".
+        .fullScreenCover(item: alarmBinding) { alarm in
+            AlarmView(alarm: alarm, repository: repository, cache: cache) {
+                pushRouter?.confirmAlarm()
+            }
+        }
+    }
+
+    private var alarmBinding: Binding<PushRouter.Alarm?> {
+        Binding(get: { pushRouter?.alarm },
+                set: { if $0 == nil { pushRouter?.confirmAlarm() } })
     }
 
     private func path(for tab: AppTab) -> Binding<NavigationPath> {
