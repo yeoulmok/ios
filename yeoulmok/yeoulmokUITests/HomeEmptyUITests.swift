@@ -37,14 +37,19 @@ final class HomeEmptyUITests: XCTestCase {
         XCTAssertFalse(app.buttons["home.empty.addValley"].exists)
     }
 
-    /// Mock subscriptions are 1, 2 and 4.
+    /// Mock subscriptions are 1, 2 and 4. Unsubscribes on each detail (#57: the
+    /// button moved there from the search list), going back to the list each time.
     private func unsubscribeAll() {
         app.tabBars.buttons["검색"].tap()
         for id in [1, 2, 4] {
-            let button = app.buttons["search.subscription.\(id)"]
+            let row = app.buttons["search.row.\(id)"]
+            XCTAssertTrue(row.waitForExistence(timeout: 3))
+            row.tap()
+            let button = app.buttons["detail.subscription"]
             XCTAssertTrue(button.waitForExistence(timeout: 3))
             button.tap()
             XCTAssertTrue(button.label.hasSuffix(" 구독"), "valley \(id) unsubscribed")
+            app.navigationBars.buttons.element(boundBy: 0).tap()
         }
     }
 }

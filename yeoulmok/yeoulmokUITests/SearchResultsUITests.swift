@@ -1,7 +1,7 @@
 import XCTest
 
 /// APP-SRCH-02: the search tab lists valleys, filters by name, shows 02a when
-/// nothing matches, and opens detail from a row.
+/// nothing matches, and opens detail from a row (where the user subscribes, #57).
 /// Uses the bundled mock data (5 valleys; subscribed: 1 금대리, 2 갑천, 4 위험 예시).
 final class SearchResultsUITests: XCTestCase {
     private var app: XCUIApplication!
@@ -15,14 +15,14 @@ final class SearchResultsUITests: XCTestCase {
     }
 
     @MainActor
-    func testRowsShowNameRegionAndSubscription() {
-        // The row is two parts: name · region (opens detail) and the subscription button.
+    func testRowsShowNameAndRegionWithoutSubscriptionButton() {
         let geumdaeri = row(named: "금대리 계곡")
         XCTAssertTrue(geumdaeri.waitForExistence(timeout: 3))
         XCTAssertTrue(geumdaeri.label.contains("원주시 판부면"))
 
-        XCTAssertEqual(subscriptionButton(valleyID: 1).label, "금대리 계곡 구독중")
-        XCTAssertEqual(subscriptionButton(valleyID: 3).label, "안전 예시 계곡 구독")
+        // #57: subscribing moved to the detail, so the list has no "구독" buttons.
+        XCTAssertFalse(app.buttons["search.subscription.1"].exists)
+        XCTAssertFalse(app.buttons["detail.subscription"].exists)
     }
 
     @MainActor
@@ -61,18 +61,9 @@ final class SearchResultsUITests: XCTestCase {
         field.typeText(text + "\n")
     }
 
-    /// "구독" / "구독중" button of a row (see SearchResultRow).
-    private func subscriptionButton(valleyID: Int) -> XCUIElement {
-        app.buttons["search.subscription.\(valleyID)"]
-    }
-
-    /// The name · region part of a row: its label starts with the valley name.
-    /// The subscription button's label also starts with the name, so it is excluded.
+    /// A row: its label starts with the valley name (see SearchResultRow).
     private func row(named name: String) -> XCUIElement {
-        app.descendants(matching: .any)
-            .matching(NSPredicate(
-                format: "label BEGINSWITH %@ AND NOT (identifier BEGINSWITH 'search.subscription')", name
-            ))
+        app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'search.row.' AND label BEGINSWITH %@", name))
             .firstMatch
     }
 }

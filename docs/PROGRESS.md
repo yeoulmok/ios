@@ -1,11 +1,11 @@
 # Progress
 
-최종 갱신: 2026-11-18
+최종 갱신: 2026-11-19
 
 ## Now
-- #24 프로젝트 초기 세팅(#29), #27 Mock · API 모델(#30), #1 하단 탭(#31), #2 상태 배지(#32), #3 출처 표기(#33), #4 홈 구독 목록(#34), #5 계곡 추가 진입(#35), #6 상세 이동(#36), #21 검색 결과(#37), #7 구독 토글(#38), #39 check.sh 재시도(#40), #8 기기 등록 · 실제 서버 연결(#41), #10 경보 요약(#42), #11 관측 정보(#43), #12 행동 요령(#44), #13 면책 문구(#45) 완료 (경보 상세 P0 완성), #9 새로고침 · 자료 지연(#46), #18 구독 없음 상태(#47), #17 공통 에러 화면(#48), #16 통신 불가 시 마지막 상태(#49), #14 위치 권한(#50), #15 주변 계곡 목록(#51), #22 알림 권한 요청(#52), #23 약관 · 앱 정보(#53), #19 푸시 수신 앱 쪽(#54), #20 푸시 딥링크(#55) 완료(둘 다 실기기 확인 전이라 이슈 열어 둠). #26 Apple 준비는 아이폰 등록만 남음(11/18). Push 기능(`aps-environment`) 켜기는 PR 리뷰 중.
+- #24 프로젝트 초기 세팅(#29), #27 Mock · API 모델(#30), #1 하단 탭(#31), #2 상태 배지(#32), #3 출처 표기(#33), #4 홈 구독 목록(#34), #5 계곡 추가 진입(#35), #6 상세 이동(#36), #21 검색 결과(#37), #7 구독 토글(#38), #39 check.sh 재시도(#40), #8 기기 등록 · 실제 서버 연결(#41), #10 경보 요약(#42), #11 관측 정보(#43), #12 행동 요령(#44), #13 면책 문구(#45) 완료 (경보 상세 P0 완성), #9 새로고침 · 자료 지연(#46), #18 구독 없음 상태(#47), #17 공통 에러 화면(#48), #16 통신 불가 시 마지막 상태(#49), #14 위치 권한(#50), #15 주변 계곡 목록(#51), #22 알림 권한 요청(#52), #23 약관 · 앱 정보(#53), #19 푸시 수신 앱 쪽(#54), #20 푸시 딥링크(#55) 완료(둘 다 실기기 확인 전이라 이슈 열어 둠). #26 Apple 준비는 아이폰 등록만 남음(11/18). Push 기능(`aps-environment`) 켜기(#56) 완료, 11/19 서버 sandbox 시험 푸시가 시뮬레이터에 도착. P0 뒤 추가 기능(P1) 이슈 4개: #57 상세 구독 · #58 근처 지도 · #59 홈 주목 카드 · #60 경보 알림 강화. #57은 PR 리뷰 중.
 - 앱 구조: `Shared/Models`(응답 모델), `Shared/Networking`(시각 변환 · 에러), `Shared/Repository`(데이터 약속), `Mock/`(가짜 응답 · Mock 저장소). `Shared/Device`(device_id 등록 · 보관). 화면은 `ValleyRepository`만 보고, 앱은 `ServerValleyRepository`(실제 서버), 테스트는 `MockValleyRepository`를 씁니다.
-- 다음에 할 일: **아이폰을 개발 기기로 등록(#26 마지막 항목)** → #19 · #20 · #22 실기기 확인(토큰 등록, 앱이 뒤에 있을 때 · 꺼져 있을 때 탭, 야간 무음) → QA. 앱 P0 이슈는 코드 작업 끝.
+- 다음에 할 일: **#58 근처 지도** → #59 홈 주목 카드(선택 규칙은 이슈에 확정) → #60 경보 알림(서버 푸시 변경 · 경보음 · 문구는 사람이 정함, 노션 자료요청). 사이에 아이폰 등록(#26 마지막) → #19 · #20 · #22 실기기 확인 → QA.
 - 화면 이동 규칙: 하위 화면은 "눌렸다"만 클로저로 알리고, 탭 전환은 `RootView`가 결정 (예: `HomeView(onAddValley:)`). 상세 열기는 `NavigationLink(value: ValleyRoute(valleyID:))` 하나로 통일하고, `ValleyRoute` → `ValleyDetailView` 변환은 `RootView`에 한 번만 등록 (근처 · 검색 · 푸시도 같은 방식).
 - 공통 부품(`Shared/Components`): `StatusBadge`, `SourceFooter`(서버 `source`가 비거나 `"자료: "`면 기본 문구).
 - 데이터 흐름: `YeoulmokApp`이 저장소를 하나 만들어 `RootView` → 각 화면 → `@Observable` ViewModel로 넘김 (기본은 `ServerValleyRepository`). 화면 상태는 `State` enum(loading · loaded · empty · failed).
@@ -13,7 +13,7 @@
 - `check.sh` 통과만 보지 말고 실행된 테스트 수도 확인할 것: #7 작업 중 `project.xcproj`에 `"opaque-folders": ["Search"]`가 생겨 `yeoulmokTests/Search`가 빌드에서 빠졌는데도 통과로 나옴 (원인 모름, 되돌림).
 - Figma `앱 / 공통 · 컴포넌트`에 배지 5종 · 출처 문구 · 자료 지연 · 토스트 · 오프라인 배너 디자인이 생김. 공통 부품은 이 화면 기준.
 - 검색 탭: 키보드 "검색"을 누를 때만 요청(`?q=`), 검색창을 비우면 전체 목록. 검색창(APP-SRCH-01, P1) 일부를 #21에서 함께 구현. 검색어 없이 0건일 때 문구 "해당하는 계곡이 없어요"는 임시.
-- 구독 토글(#7): 먼저 버튼을 바꾸고 요청, 실패하면 되돌림 + `Toast`(02b). 요청 중인 계곡 버튼만 비활성. 검색 행은 [이름·지역 → 상세] | [구독 버튼] 두 부분. 실패 재현: DEBUG 실행 옵션 `-mockSubscriptionFails`.
+- 구독 토글(#7): 먼저 버튼을 바꾸고 요청, 실패하면 되돌림 + `Toast`(02b). 요청 중인 계곡 버튼만 비활성. **#57부터 구독 버튼은 경보 상세 오른쪽 위에만 있음**(`ValleyDetailViewModel.toggleSubscription`, `detail.subscription`, 같은 규칙). 검색 행은 줄 전체가 상세로 가는 링크(`search.row.<id>`). 상세는 탭바가 없어서 UI 테스트는 뒤로 간 뒤 탭을 바꿈. 실패 재현: DEBUG 실행 옵션 `-mockSubscriptionFails`.
 - 서버 연결(#8): `APIClient`(요청 · 에러 구분) → `DeviceRegistrar`(`device_id` 등록은 한 번만, Keychain 보관, `DEVICE_NOT_FOUND`면 다시 등록 후 한 번만 재요청, APNs 토큰은 `PATCH /devices`) → `ServerValleyRepository`. Keychain을 못 읽으면 새로 등록하지 않음(구독이 사라져 보이는 것 방지). 실제 APNs 토큰 전달은 #26 · #19에서.
 - Mock 실행: DEBUG 실행 옵션 `-useMockData`(또는 `-mockSubscriptionFails`). UI 테스트는 전부 이 옵션으로 실행하고, 단위 테스트 호스트 앱도 자동으로 Mock을 씀. 새 UI 테스트도 `-useMockData`를 붙일 것.
 - 서버 동작 메모(서버 담당 확인 필요): 결과가 0개면 `source`가 `"자료: "`로 옴(앱은 `SourceFooter` 기본 문구로 처리됨), `GET /me/valleys`는 모르는 `device_id`에도 `DEVICE_NOT_FOUND` 대신 빈 목록(200).
@@ -95,3 +95,4 @@
 - 2026-11-16 — #23 머지(#53). #19(앱 쪽): `AppDelegate` 알림 delegate, `PushPresentation`(포그라운드 배너 · 목록 · 소리), `simctl push` 확인. 단위 215개, UI 43개. 실기기 확인은 #26 뒤. 다음: #20.
 - 2026-11-16 — #19 앱 쪽 머지(#54). #20: `PushPayload` · `PushRouter` · `didReceive`, `TabNavigation` · 탭별 경로, `-mockPushValleyID`, UI 테스트 3개, 진짜 탭 확인 중 백그라운드 크래시 발견 · 수정(completion handler). 단위 226개, UI 46개. 다음: #26 → 실기기 확인 → QA.
 - 2026-11-18 — #20 머지(#55). #26: 아이폰 등록 빼고 완료(App ID 푸시 · APNs 키 전달 · App Store Connect, 서연). #19 Push 기능: entitlements · `CODE_SIGN_ENTITLEMENTS`, 토큰 성공 로그, 시뮬레이터에서 실제 토큰 → 서버 등록 확인. 단위 226개, 알림 UI 6개. 다음: 아이폰 등록 → 실기기 확인.
+- 2026-11-19 — #56 머지, sandbox 시험 푸시 시뮬레이터 수신 확인(valley_id 0, 탭 이동은 미확인). 새 요청으로 #57~#60 이슈 · 노션 기능 목록 · 자료요청. #57: 상세 구독 버튼, 검색 행 버튼 제거, `SearchSubscriptionTests` 삭제(규칙은 `DetailSubscriptionTests`). 단위 227개, UI 47개. 다음: #58.

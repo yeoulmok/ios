@@ -18,6 +18,25 @@ struct ValleyDetailView: View {
             .navigationBarTitleDisplayMode(.large)
             // Figma 04 has no tab bar: the detail covers the whole screen.
             .toolbar(.hidden, for: .tabBar)
+            .toolbar {
+                // APP-DTL-06 (#57): subscribing happens here, not in the search list.
+                // Not in Figma; placed like the settings gear on home.
+                if case let .loaded(detail) = viewModel.state {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button {
+                            Task { await viewModel.toggleSubscription() }
+                        } label: {
+                            SubscriptionPill(isSubscribed: detail.isSubscribed)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(viewModel.isSubscriptionPending)
+                        // VoiceOver: "금대리 계곡 구독중".
+                        .accessibilityLabel("\(detail.name) \(SubscriptionPill.title(isSubscribed: detail.isSubscribed))")
+                        .accessibilityIdentifier("detail.subscription")
+                    }
+                }
+            }
+            .toast(message: $viewModel.toastMessage)
             .task {
                 await viewModel.load()
             }
