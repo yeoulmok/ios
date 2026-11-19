@@ -36,6 +36,17 @@ struct NearbyListTests {
         #expect(viewModel.offlineAsOf == nil)
     }
 
+    /// #58: the map's "내 위치" is the point the distances were measured from.
+    @Test func keepsTheLocationTheDistancesUse() async {
+        let viewModel = NearbyViewModel(permission: allowed(at: atValley5), repository: StubRepository())
+        #expect(viewModel.userLocation == nil)
+
+        await viewModel.load()
+
+        #expect(viewModel.userLocation?.latitude == atValley5.latitude)
+        #expect(viewModel.userLocation?.longitude == atValley5.longitude)
+    }
+
     @Test func refreshUsesTheNewLocation() async {
         let permission = allowed(at: atValley1)
         let viewModel = NearbyViewModel(permission: permission, repository: StubRepository())
