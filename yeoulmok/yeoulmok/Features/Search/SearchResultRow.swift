@@ -1,50 +1,38 @@
 import SwiftUI
 
-/// One valley in the search list (Figma 02 v2). No status badge here:
-/// search is for finding and subscribing, the risk is shown on home and detail.
+/// One valley in the search list (Figma 02 v2). No status badge here: the risk is
+/// shown on home and detail. The whole row opens the detail, where the user
+/// subscribes (APP-DTL-06, #57 — the subscription button moved there from this row).
 ///
-///     [금대리 계곡            ]  [구독중]
-///     [원주시 판부면          ]
-///      └ opens detail           └ toggles subscription (only this reacts)
-///
-/// The two parts are siblings, not nested, so tapping the button never opens detail.
+///     [금대리 계곡                    ›]
+///     [원주시 판부면                   ]
 struct SearchResultRow: View {
     let valley: ValleySummary
-    /// The subscription request for this valley is still running.
-    var isPending = false
-    var onToggleSubscription: () -> Void = {}
 
     var body: some View {
-        HStack(spacing: 12) {
-            NavigationLink(value: ValleyRoute(valleyID: valley.id)) {
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(valley.name)
-                            .font(.headline)
-                        Text(valley.region)
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                    }
-                    Spacer(minLength: 0)
+        NavigationLink(value: ValleyRoute(valleyID: valley.id)) {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(valley.name)
+                        .font(.headline)
+                    Text(valley.region)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                 }
-                // The empty space up to the button opens detail too.
-                .contentShape(Rectangle())
+                Spacer(minLength: 0)
+                // Says "this opens something", now that the row has no button.
+                Image(systemName: "chevron.right")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(Color(.tertiaryLabel))
             }
-            .buttonStyle(.plain)
-            // VoiceOver: "금대리 계곡, 원주시 판부면".
-            .accessibilityElement(children: .combine)
-
-            Button(action: onToggleSubscription) {
-                SubscriptionPill(isSubscribed: valley.isSubscribed)
-            }
-            .buttonStyle(.plain)
-            // One request per valley at a time (see SearchViewModel.pendingValleyIDs).
-            .disabled(isPending)
-            // VoiceOver: "금대리 계곡 구독중", so the button says which valley it is for.
-            .accessibilityLabel("\(valley.name) \(SubscriptionPill.title(isSubscribed: valley.isSubscribed))")
-            .accessibilityIdentifier("search.subscription.\(valley.id)")
+            .padding(.vertical, 12)
+            // The empty space opens detail too.
+            .contentShape(Rectangle())
         }
-        .padding(.vertical, 12)
+        .buttonStyle(.plain)
+        // VoiceOver: "금대리 계곡, 원주시 판부면".
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("search.row.\(valley.id)")
     }
 }
 
