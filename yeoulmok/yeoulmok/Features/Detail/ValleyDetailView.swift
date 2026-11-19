@@ -74,16 +74,8 @@ struct ValleyDetailView: View {
                 if let asOf = viewModel.offlineAsOf {
                     OfflineBanner(asOf: asOf)
                 }
-                HStack(spacing: 10) {
-                    StatusBadge(level: detail.level, size: .large)
-                    // Next to the level it qualifies: the judgment uses late data.
-                    if detail.isStale {
-                        StaleLabel()
-                    }
-                }
-                Text(detail.summary)
-                    .font(.title3.weight(.bold))
-                    .accessibilityIdentifier("detail.summary")
+                // #63: level, scale, summary in one card.
+                DetailLevelCard(detail: detail)
                 ObservationSection(observations: detail.observations)
                     .padding(.top, 4)
                 ActionList(actions: detail.actions)
