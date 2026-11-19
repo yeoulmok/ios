@@ -26,36 +26,80 @@ struct ObservationSection: View {
     }
 }
 
-/// One observation: 관측소 · 관측 시각 · 실측값 · 기준값 (text from `ObservationFormat`).
+/// One observation as a gauge card (#63; before it was the Figma 04 four-line table):
+///
+///     강수 1시간                      18.0mm / 기준 15.0mm
+///     ███████████▌|·····
+///     원주 신림(AWS) · 21:50
+///
+/// AI estimates carry an "AI 추정" tag and say they were estimated. A missing value
+/// draws a dashed outline instead of a bar, with the reason in the small line.
+/// VoiceOver still reads the same sentence as before (`ObservationFormat.accessibilityLabel`).
 struct ObservationBox: View {
+    /// Temporary wording until QA.
+    static let estimatedTag = "AI 추정"
+
     let observation: ValleyObservation
 
     var body: some View {
-        Grid(alignment: .leading, horizontalSpacing: 16, verticalSpacing: 6) {
-            row("관측소", ObservationFormat.station(observation))
-            row("관측 시각", ObservationFormat.time(observation))
-            row("실측값", ObservationFormat.value(observation))
-            row("기준값", ObservationFormat.threshold(observation))
+        VStack(alignment: .leading, spacing: 8) {
+            if observation.isEstimated {
+                Label(Self.estimatedTag, systemImage: "sparkles")
+                    .font(.caption.weight(.semibold))
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(Color(.systemGray5), in: Capsule())
+            }
+            ThresholdGauge(
+                title: ObservationFormat.title(observation),
+                valueText: ObservationFormat.shortValue(observation),
+                thresholdText: ObservationFormat.shortThreshold(observation),
+                value: observation.value,
+                threshold: observation.threshold,
+                change: observation.kind == .rainLastHour ? nil : observation.value)
+            Text(ObservationFormat.footnote(observation))
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
-        .font(.subheadline)
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
         .overlay {
             RoundedRectangle(cornerRadius: 12)
-                .strokeBorder(Color(.systemGray4))
+                .strokeBorder(Color(.systemGray4), style: observation.isEstimated
+                              ? StrokeStyle(lineWidth: 1, dash: [5, 3]) : StrokeStyle(lineWidth: 1))
         }
-        // VoiceOver reads the box as one sentence instead of eight separate texts.
+        // VoiceOver reads the card as one sentence, the same as the old table.
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(ObservationFormat.accessibilityLabel(observation))
     }
+}
 
-    private func row(_ label: String, _ value: String) -> some View {
-        GridRow {
-            Text(label)
-                .foregroundStyle(.secondary)
-            Text(value)
-                .fontWeight(.semibold)
+/// AI-written reason for the level (APP-DTL-02, in #63). Only when the server sends one.
+struct AIExplanationBox: View {
+    /// Temporary wording until QA.
+    static let title = "AI 설명"
+    static let fallbackNote = "AI 대신 정해진 문구예요"
+
+    let text: String
+    let isFallback: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Label(Self.title, systemImage: "sparkles")
+                .font(.headline)
+            Text(text)
+                .font(.subheadline)
+            if isFallback {
+                Text(Self.fallbackNote)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding()
+        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 12))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("detail.aiExplanation")
     }
 }
 

@@ -44,6 +44,60 @@ nonisolated enum ObservationFormat {
         }
     }
 
+    // MARK: Gauge card (#63)
+
+    /// Card title: `강수 1시간`, `수위 30분`, `3시간 수위 상승`; a kind the app does not know: the station.
+    static func title(_ observation: ValleyObservation) -> String {
+        switch observation.kind {
+        case .rainLastHour: "강수 1시간"
+        case .waterRise30Min: "수위 30분"
+        case .estRise3h: "3시간 수위 상승"
+        case .other: observation.station
+        }
+    }
+
+    /// The number next to the gauge, without the period: `18.0mm`, `+0.06m`, or `-`.
+    static func shortValue(_ observation: ValleyObservation) -> String {
+        guard let value = observation.value else { return ValleyFormat.missing }
+        return short(value, observation)
+    }
+
+    /// The threshold next to the gauge: `15.0mm`, `0.10m`, or `nil` when there is none.
+    static func shortThreshold(_ observation: ValleyObservation) -> String? {
+        guard let threshold = observation.threshold else { return nil }
+        switch observation.kind {
+        case .rainLastHour: return ValleyFormat.rainfall(threshold)
+        case .waterRise30Min, .estRise3h: return String(format: "%.2fm", threshold)
+        case .other: return plain(threshold, unit: observation.unit)
+        }
+    }
+
+    /// Small line under the gauge: `원주 신림(AWS) · 21:50`, with the reason when the
+    /// value is missing (`횡성(갑천) · 수위 결측` when there is no time either). AI estimates say so instead of a station.
+    static func footnote(_ observation: ValleyObservation, now: Date = .now) -> String {
+        let source = observation.isEstimated ? estimatedSource : observation.station
+        var parts = [source]
+        // No time at all reads better than "· - ·" next to the reason.
+        if observation.observedAt != nil {
+            parts.append(time(observation, now: now))
+        }
+        if observation.value == nil, let note = observation.note, !note.isEmpty {
+            parts.append(note)
+        }
+        return parts.joined(separator: " · ")
+    }
+
+    /// Temporary wording until QA.
+    static let estimatedSource = "강수량으로 추정한 값이에요"
+
+    private static func short(_ value: Double, _ observation: ValleyObservation) -> String {
+        switch observation.kind {
+        case .rainLastHour: ValleyFormat.rainfall(value)
+        case .waterRise30Min, .estRise3h: ValleyFormat.waterRise(value)
+        case .other: plain(value, unit: observation.unit)
+        }
+    }
+
     /// What VoiceOver reads for the whole box.
     static func accessibilityLabel(_ observation: ValleyObservation, now: Date = .now) -> String {
         let parts = [

@@ -76,8 +76,14 @@ struct ValleyDetailView: View {
                 }
                 // #63: level, scale, summary in one card.
                 DetailLevelCard(detail: detail)
+                Text("지금 수치")
+                    .font(.headline)
+                    .padding(.top, 8)
                 ObservationSection(observations: detail.observations)
-                    .padding(.top, 4)
+                if let explanation = detail.aiExplanation, !explanation.isEmpty {
+                    AIExplanationBox(text: explanation, isFallback: detail.isAIFallback)
+                        .padding(.top, 4)
+                }
                 ActionList(actions: detail.actions)
                     .padding(.top, 8)
                 DetailFooter(disclaimer: detail.disclaimer, source: detail.source)
