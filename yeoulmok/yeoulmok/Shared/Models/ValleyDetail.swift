@@ -44,7 +44,7 @@ nonisolated struct ValleyDetail: Codable, Identifiable, Equatable {
 extension ValleyDetail {
     /// Written out only so `estimated` may be missing (in an extension, so the
     /// memberwise initializer stays).
-    init(from decoder: Decoder) throws {
+    nonisolated init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         updatedAt = try c.decode(Date.self, forKey: .updatedAt)
         id = try c.decode(Int.self, forKey: .id)
@@ -93,7 +93,7 @@ nonisolated struct ValleyObservation: Codable, Equatable {
 
 extension ValleyObservation {
     /// Written out only so `estimated` may be missing (see `ValleyDetail`).
-    init(from decoder: Decoder) throws {
+    nonisolated init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         kind = try c.decode(ObservationKind.self, forKey: .kind)
         station = try c.decode(String.self, forKey: .station)
@@ -118,7 +118,7 @@ nonisolated enum ObservationKind: String, Codable {
     case estRise3h = "est_rise_3h"
     case other
 
-    init(from decoder: Decoder) throws {
+    nonisolated init(from decoder: Decoder) throws {
         let rawValue = try decoder.singleValueContainer().decode(String.self)
         self = ObservationKind(rawValue: rawValue) ?? .other
     }

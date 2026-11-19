@@ -2,7 +2,7 @@ import SwiftUI
 
 extension ValleyLevel {
     /// 위험 · 대피: the levels whose badge is gently emphasized (#59, #63).
-    var isUrgent: Bool { self == .danger || self == .evacuate }
+    nonisolated var isUrgent: Bool { self == .danger || self == .evacuate }
 
     /// Background and border color of a card about this level. 판정 불가 gets gray,
     /// never the 안전 green.

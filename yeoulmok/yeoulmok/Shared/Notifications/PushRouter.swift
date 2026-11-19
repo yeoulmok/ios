@@ -19,4 +19,28 @@ final class PushRouter {
         defer { pendingValleyID = nil }
         return pendingValleyID
     }
+
+    // MARK: Alarm (#60)
+
+    /// The full-screen alarm on screen: a 위험 · 대피 push. Stays until confirmed.
+    private(set) var alarm: Alarm?
+
+    struct Alarm: Equatable, Identifiable {
+        let valleyID: Int
+        /// `true` when the push arrived while the app was open: the app plays the
+        /// alarm sound itself. `false` after a tapped push (iOS already alerted).
+        let playsSound: Bool
+        var id: Int { valleyID }
+    }
+
+    func raiseAlarm(valleyID: Int, playsSound: Bool) {
+        alarm = Alarm(valleyID: valleyID, playsSound: playsSound)
+    }
+
+    /// "확인했습니다": closes the alarm and opens that valley's detail.
+    func confirmAlarm() {
+        guard let alarm else { return }
+        self.alarm = nil
+        open(valleyID: alarm.valleyID)
+    }
 }

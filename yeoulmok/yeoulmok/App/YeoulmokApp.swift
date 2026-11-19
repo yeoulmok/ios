@@ -24,6 +24,9 @@ struct YeoulmokApp: App {
                 if let valleyID = Self.mockPushValleyID {
                     appDelegate.pushRouter.open(valleyID: valleyID)
                 }
+                if let valleyID = Self.mockOption("-mockAlarmValleyID") {
+                    appDelegate.pushRouter.raiseAlarm(valleyID: valleyID, playsSound: false)
+                }
                 await connectPushTokens()
             }
         }
@@ -47,6 +50,17 @@ struct YeoulmokApp: App {
         let arguments = ProcessInfo.processInfo.arguments
         guard let index = arguments.firstIndex(of: "-mockPushValleyID"),
               arguments.indices.contains(index + 1) else { return nil }
+        return Int(arguments[index + 1])
+        #else
+        return nil
+        #endif
+    }
+
+    /// DEBUG `-mockAlarmValleyID <id>`: as if a 위험 · 대피 push for that valley was tapped (#60).
+    private static func mockOption(_ name: String) -> Int? {
+        #if DEBUG
+        let arguments = ProcessInfo.processInfo.arguments
+        guard let index = arguments.firstIndex(of: name), arguments.indices.contains(index + 1) else { return nil }
         return Int(arguments[index + 1])
         #else
         return nil

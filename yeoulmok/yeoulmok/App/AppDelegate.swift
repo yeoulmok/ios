@@ -38,6 +38,16 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         _ center: UNUserNotificationCenter, willPresent notification: UNNotification,
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
+        let userInfo = notification.request.content.userInfo
+        // #60: a 위험 · 대피 push while the app is open shows the full-screen alarm with
+        // its sound right away; iOS only files it in Notification Center.
+        if PushPayload.isAlarm(userInfo), let valleyID = PushPayload.valleyID(from: userInfo) {
+            Task { @MainActor in
+                pushRouter.raiseAlarm(valleyID: valleyID, playsSound: true)
+            }
+            completionHandler(PushPresentation.alarmWhileOpen)
+            return
+        }
         completionHandler(PushPresentation.whileOpen)
     }
 
@@ -50,9 +60,15 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         // Only a tap on the notification itself (not, e.g., swiping it away).
         if response.actionIdentifier == UNNotificationDefaultActionIdentifier,
            let valleyID = PushPayload.valleyID(from: response.notification.request.content.userInfo) {
-            // The router lives on the main actor; RootView opens the detail when it changes.
+            let isAlarm = PushPayload.isAlarm(response.notification.request.content.userInfo)
+            // The router lives on the main actor; RootView opens the detail (or, for
+            // 위험 · 대피, the full-screen alarm first, #60) when it changes.
             Task { @MainActor in
-                pushRouter.open(valleyID: valleyID)
+                if isAlarm {
+                    pushRouter.raiseAlarm(valleyID: valleyID, playsSound: false)
+                } else {
+                    pushRouter.open(valleyID: valleyID)
+                }
             }
         }
         completionHandler()
@@ -65,4 +81,7 @@ nonisolated enum PushPresentation {
     /// `.sound` only plays when the push has a sound, so the server's silent night-time
     /// `caution` (no `sound` key, API spec 4) stays silent here too. No badge: the app has none.
     static let whileOpen: UNNotificationPresentationOptions = [.banner, .list, .sound]
+    /// 위험 · 대피 while open (#60): the app shows its own alarm screen and sound,
+    /// so iOS only keeps it in Notification Center.
+    static let alarmWhileOpen: UNNotificationPresentationOptions = [.list]
 }

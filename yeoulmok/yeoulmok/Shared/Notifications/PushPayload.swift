@@ -19,4 +19,16 @@ nonisolated enum PushPayload {
         guard let id, id > 0 else { return nil }
         return id
     }
+
+    static let levelKey = "level"
+
+    /// The pushed level (`"danger"` …), or `nil` when missing or unknown (e.g. `"test"`).
+    static func level(from userInfo: [AnyHashable: Any]) -> ValleyLevel? {
+        (userInfo[levelKey] as? String).flatMap(ValleyLevel.init(rawValue:))
+    }
+
+    /// 위험 · 대피 pushes open the full-screen alarm instead of the detail (#60).
+    static func isAlarm(_ userInfo: [AnyHashable: Any]) -> Bool {
+        level(from: userInfo)?.isUrgent == true
+    }
 }
