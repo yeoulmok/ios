@@ -31,6 +31,19 @@ nonisolated enum ValleyFormat {
         return formatter(sameDay ? "HH:mm" : "M/d HH:mm").string(from: date)
     }
 
+    /// "방금 전", "12분 전", "3시간 전", older than a day: the date and time (#59).
+    /// Missing: "-".
+    static func timeAgo(_ date: Date?, now: Date = .now) -> String {
+        guard let date else { return missing }
+        let minutes = Int(now.timeIntervalSince(date) / 60)
+        switch minutes {
+        case ..<1: return "방금 전"
+        case ..<60: return "\(minutes)분 전"
+        case ..<(24 * 60): return "\(minutes / 60)시간 전"
+        default: return observedTime(date, now: now)
+        }
+    }
+
     private static func formatter(_ format: String) -> DateFormatter {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
