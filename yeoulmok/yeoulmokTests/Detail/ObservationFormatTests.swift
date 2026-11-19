@@ -80,4 +80,59 @@ struct ObservationFormatTests {
         #expect(ObservationFormat.accessibilityLabel(rain, now: Self.now)
                 == "강수, 원주 신림(AWS), 관측 시각 21:50, 실측값 18.0mm / 1시간, 기준값 15.0mm / 1시간")
     }
+
+    // MARK: AI estimate (#63)
+
+    @Test func estimatedRiseReadsAsThreeHours() {
+        let estimate = ValleyObservation(kind: .estRise3h, station: "AI 추정(강수 기반)",
+                                         observedAt: nil, value: 0.04, unit: "m", threshold: 0.3,
+                                         note: nil, isEstimated: true)
+        #expect(ObservationFormat.value(estimate) == "+0.04m / 3시간")
+        #expect(ObservationFormat.threshold(estimate) == "0.30m / 3시간")
+        #expect(ObservationFormat.station(estimate) == "AI 추정(강수 기반) (AI 추정 수위)")
+        #expect(ObservationFormat.accessibilityLabel(estimate).hasPrefix("AI 추정 수위, "))
+    }
+}
+
+/// #63: the texts of the gauge card.
+struct ObservationCardFormatTests {
+    private func observation(_ kind: ObservationKind, value: Double?, threshold: Double? = 15,
+                             note: String? = nil, estimated: Bool = false) -> ValleyObservation {
+        ValleyObservation(kind: kind, station: "원주 신림(AWS)", observedAt: ServerDate.parse("2026-11-07T21:50"),
+                          value: value, unit: kind == .rainLastHour ? "mm" : "m", threshold: threshold,
+                          note: note, isEstimated: estimated)
+    }
+
+    private let now = ServerDate.parse("2026-11-07T22:00")!
+
+    @Test func titles() {
+        #expect(ObservationFormat.title(observation(.rainLastHour, value: 1)) == "강수 1시간")
+        #expect(ObservationFormat.title(observation(.waterRise30Min, value: 1)) == "수위 30분")
+        #expect(ObservationFormat.title(observation(.estRise3h, value: 1)) == "3시간 수위 상승")
+        #expect(ObservationFormat.title(observation(.other, value: 1)) == "원주 신림(AWS)")
+    }
+
+    @Test func shortNumbers() {
+        #expect(ObservationFormat.shortValue(observation(.rainLastHour, value: 18)) == "18.0mm")
+        #expect(ObservationFormat.shortValue(observation(.waterRise30Min, value: 0.06)) == "+0.06m")
+        #expect(ObservationFormat.shortThreshold(observation(.waterRise30Min, value: 0.06, threshold: 0.1)) == "0.10m")
+        #expect(ObservationFormat.shortThreshold(observation(.rainLastHour, value: 1, threshold: nil)) == nil)
+    }
+
+    @Test func missingValueIsDashWithReasonNeverZero() {
+        let missing = observation(.waterRise30Min, value: nil, threshold: 0.1, note: "수위 결측")
+        #expect(ObservationFormat.shortValue(missing) == "-")
+        #expect(ObservationFormat.footnote(missing, now: now) == "원주 신림(AWS) · 21:50 · 수위 결측")
+    }
+
+    @Test func noTimeIsLeftOutOfTheSmallLine() {
+        let late = ValleyObservation(kind: .rainLastHour, station: "횡성 갑천(AWS)", observedAt: nil,
+                                     value: nil, unit: "mm", threshold: 15, note: "강수 자료 지연")
+        #expect(ObservationFormat.footnote(late, now: now) == "횡성 갑천(AWS) · 강수 자료 지연")
+    }
+
+    @Test func estimateSaysItWasEstimated() {
+        let estimate = observation(.estRise3h, value: 0.04, threshold: 0.3, estimated: true)
+        #expect(ObservationFormat.footnote(estimate, now: now) == "강수량으로 추정한 값이에요 · 21:50")
+    }
 }

@@ -87,3 +87,24 @@ struct RiskVisualsTests {
         #expect(ValleyFormat.timeAgo(nil, now: now) == "-")
     }
 }
+
+/// #63: the detail's level card.
+struct DetailLevelCardTests {
+    @Test func latestObservationIgnoresAIEstimates() throws {
+        let details = try MockData.valleyDetails(bundle: .main)
+        // 금대리: both stations observed at 21:50.
+        let geumdaeri = try #require(details.first { $0.id == 1 })
+        #expect(DetailLevelCard.latestObservation(in: geumdaeri) == ServerDate.parse("2026-11-07T21:50"))
+        // 갑천: no measured data; the AI estimate (21:10) does not count as observed.
+        let gapcheon = try #require(details.first { $0.id == 2 })
+        #expect(DetailLevelCard.latestObservation(in: gapcheon) == nil)
+    }
+
+    @Test func urgentLevels() {
+        #expect(ValleyLevel.danger.isUrgent)
+        #expect(ValleyLevel.evacuate.isUrgent)
+        #expect(!ValleyLevel.caution.isUrgent)
+        #expect(!ValleyLevel.unknown.isUrgent)
+        #expect(!ValleyLevel.safe.isUrgent)
+    }
+}

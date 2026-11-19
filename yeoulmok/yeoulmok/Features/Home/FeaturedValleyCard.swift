@@ -17,9 +17,6 @@ struct FeaturedValleyCard: View {
     let featured: FeaturedValley
     let detail: ValleyDetail?
 
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var pulsing = false
-
     private var valley: ValleySummary { featured.valley }
 
     var body: some View {
@@ -37,7 +34,7 @@ struct FeaturedValleyCard: View {
                 }
                 Spacer()
                 StatusBadge(level: valley.level, size: .large)
-                    .scaleEffect(pulsing ? 1.08 : 1)
+                    .urgentPulse(valley.level)
             }
             LevelScale(level: valley.level)
             if let detail {
@@ -72,8 +69,6 @@ struct FeaturedValleyCard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(tint.opacity(0.08), in: RoundedRectangle(cornerRadius: 16))
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(tint.opacity(0.6), lineWidth: 1.5))
-        .onAppear(perform: startPulse)
-        .onChange(of: valley.level) { startPulse() }
     }
 
     /// "원주시 판부면 · 11.3km" (distance only when the location is known).
@@ -82,25 +77,10 @@ struct FeaturedValleyCard: View {
         return "\(valley.region) · \(NearbyValleys.distanceText(meters: meters))"
     }
 
-    /// 판정 불가 gets gray, never the 안전 green.
-    private var tint: Color {
-        valley.level == .unknown ? Color(.systemGray) : valley.level.badgeBackground
-    }
+    private var tint: Color { valley.level.cardTint }
 
     private func threshold(_ kind: ObservationKind) -> Double? {
         detail?.observations.first { $0.kind == kind }?.threshold
-    }
-
-    /// 위험 · 대피 only: the badge gently grows and shrinks, unless Reduce Motion is on.
-    private func startPulse() {
-        let urgent = valley.level == .danger || valley.level == .evacuate
-        guard urgent, !reduceMotion else {
-            pulsing = false
-            return
-        }
-        withAnimation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true)) {
-            pulsing = true
-        }
     }
 }
 

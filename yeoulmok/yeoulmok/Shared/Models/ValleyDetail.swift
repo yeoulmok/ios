@@ -25,6 +25,9 @@ nonisolated struct ValleyDetail: Codable, Identifiable, Equatable {
     var isSubscribed: Bool
     /// `true` when the observation is older than 15 minutes.
     let isStale: Bool
+    /// `true` when the level was judged from an AI estimate (no water gauge, or its
+    /// data is missing). API spec v0.4; older answers and saved copies lack it: `false`.
+    var isEstimated: Bool = false
 
     enum CodingKeys: String, CodingKey {
         case updatedAt = "updated_at"
@@ -34,6 +37,29 @@ nonisolated struct ValleyDetail: Codable, Identifiable, Equatable {
         case observations, actions, disclaimer, source
         case isSubscribed = "subscribed"
         case isStale = "stale"
+        case isEstimated = "estimated"
+    }
+}
+
+extension ValleyDetail {
+    /// Written out only so `estimated` may be missing (in an extension, so the
+    /// memberwise initializer stays).
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        updatedAt = try c.decode(Date.self, forKey: .updatedAt)
+        id = try c.decode(Int.self, forKey: .id)
+        name = try c.decode(String.self, forKey: .name)
+        level = try c.decode(ValleyLevel.self, forKey: .level)
+        summary = try c.decode(String.self, forKey: .summary)
+        aiExplanation = try c.decodeIfPresent(String.self, forKey: .aiExplanation)
+        isAIFallback = try c.decode(Bool.self, forKey: .isAIFallback)
+        observations = try c.decode([ValleyObservation].self, forKey: .observations)
+        actions = try c.decode([String].self, forKey: .actions)
+        disclaimer = try c.decode(String.self, forKey: .disclaimer)
+        source = try c.decode(String.self, forKey: .source)
+        isSubscribed = try c.decode(Bool.self, forKey: .isSubscribed)
+        isStale = try c.decode(Bool.self, forKey: .isStale)
+        isEstimated = try c.decodeIfPresent(Bool.self, forKey: .isEstimated) ?? false
     }
 }
 
@@ -52,12 +78,31 @@ nonisolated struct ValleyObservation: Codable, Equatable {
     let threshold: Double?
     /// Why `value` is missing, e.g. "수위 결측". `nil` when there is a value.
     let note: String?
+    /// `true` for a value estimated by AI from rainfall (`est_rise_3h`), not measured.
+    /// Missing in older answers: `false`.
+    var isEstimated: Bool = false
 
     enum CodingKeys: String, CodingKey {
         case kind = "type"
         case station
         case observedAt = "observed_at"
         case value, unit, threshold, note
+        case isEstimated = "estimated"
+    }
+}
+
+extension ValleyObservation {
+    /// Written out only so `estimated` may be missing (see `ValleyDetail`).
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        kind = try c.decode(ObservationKind.self, forKey: .kind)
+        station = try c.decode(String.self, forKey: .station)
+        observedAt = try c.decodeIfPresent(Date.self, forKey: .observedAt)
+        value = try c.decodeIfPresent(Double.self, forKey: .value)
+        unit = try c.decode(String.self, forKey: .unit)
+        threshold = try c.decodeIfPresent(Double.self, forKey: .threshold)
+        note = try c.decodeIfPresent(String.self, forKey: .note)
+        isEstimated = try c.decodeIfPresent(Bool.self, forKey: .isEstimated) ?? false
     }
 }
 
@@ -68,6 +113,9 @@ nonisolated enum ObservationKind: String, Codable {
     case rainLastHour = "rain_1h"
     /// Downstream water level change over the last 30 minutes.
     case waterRise30Min = "water_rise_30m"
+    /// Water level rise over the next 3 hours, estimated by AI from rainfall
+    /// (API spec v0.4). Only for valleys without water level data.
+    case estRise3h = "est_rise_3h"
     case other
 
     init(from decoder: Decoder) throws {

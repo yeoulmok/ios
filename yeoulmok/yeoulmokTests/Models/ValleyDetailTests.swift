@@ -92,4 +92,44 @@ struct ValleyDetailTests {
         #expect(observation.kind == .other)
         #expect(observation.value == 0.3)
     }
+
+    // MARK: AI estimate (API spec v0.4, #63)
+
+    @Test func estimatedRiseObservationDecodes() throws {
+        let observation = try JSONDecoder.yeoulmok().decode(ValleyObservation.self, from: Data("""
+        {"type": "est_rise_3h", "station": "AI 추정(강수 기반)", "observed_at": "2026-11-07T21:10",
+         "value": 0.04, "unit": "m", "threshold": 0.3, "note": null, "estimated": true}
+        """.utf8))
+
+        #expect(observation.kind == .estRise3h)
+        #expect(observation.isEstimated)
+        #expect(observation.value == 0.04)
+        #expect(observation.threshold == 0.3)
+    }
+
+    @Test func missingEstimatedMeansMeasured() throws {
+        // Answers before v0.4 (and saved copies) have no "estimated": a measured value.
+        let observation = try JSONDecoder.yeoulmok().decode(ValleyObservation.self, from: Data("""
+        {"type": "rain_1h", "station": "원주 신림(AWS)", "observed_at": "2026-11-07T21:50",
+         "value": 18.0, "unit": "mm", "threshold": 15.0, "note": null}
+        """.utf8))
+
+        #expect(!observation.isEstimated)
+    }
+
+    @Test func detailEstimatedFlag() throws {
+        let mock = try MockData.valleyDetails(bundle: .main)
+        #expect(mock.first { $0.id == 2 }?.isEstimated == true)
+        #expect(mock.first { $0.id == 1 }?.isEstimated == false)
+        let estimate = try #require(mock.first { $0.id == 2 }?.observations.last)
+        #expect(estimate.kind == .estRise3h)
+        #expect(estimate.isEstimated)
+    }
+
+    @Test func savedDetailKeepsEstimatedFlag() throws {
+        let detail = try #require(try MockData.valleyDetails(bundle: .main).first { $0.id == 2 })
+        let data = try JSONEncoder.yeoulmok().encode(detail)
+        let again = try JSONDecoder.yeoulmok().decode(ValleyDetail.self, from: data)
+        #expect(again == detail)
+    }
 }
