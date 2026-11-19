@@ -23,12 +23,14 @@
       {"type": "rain_1h", "station": "횡성 갑천(AWS)", "observed_at": null,
        "value": null, "unit": "mm", "threshold": 15.0, "note": "강수 자료 지연"},
       {"type": "water_rise_30m", "station": "횡성(갑천)", "observed_at": null,
-       "value": null, "unit": "m", "threshold": 0.1, "note": "수위 결측"}
+       "value": null, "unit": "m", "threshold": 0.1, "note": "수위 결측"},
+      {"type": "est_rise_3h", "station": "AI 추정(강수 기반)", "observed_at": "2026-11-07T21:10",
+       "value": 0.04, "unit": "m", "threshold": 0.3, "note": null, "estimated": true}
     ],
     "actions": ["현장 물 상황을 직접 확인하기", "비가 오면 물가에서 떨어지기"],
     "disclaimer": "판단 보조 정보이며 공식 재난경보를 대체하지 않습니다.",
     "source": "자료: 한강홍수통제소, 기상청",
-    "subscribed": true, "stale": true
+    "subscribed": true, "stale": true, "estimated": true
   },
   {
     "updated_at": "2026-11-07T22:00", "id": 3, "name": "안전 예시 계곡",

@@ -27,6 +27,7 @@ nonisolated enum ObservationFormat {
         switch observation.kind {
         case .rainLastHour: return ValleyFormat.rainfall(value) + " / 1시간"
         case .waterRise30Min: return ValleyFormat.waterRise(value) + " / 30분"
+        case .estRise3h: return ValleyFormat.waterRise(value) + " / 3시간"
         case .other: return plain(value, unit: observation.unit)
         }
     }
@@ -38,6 +39,7 @@ nonisolated enum ObservationFormat {
         switch observation.kind {
         case .rainLastHour: return ValleyFormat.rainfall(threshold) + " / 1시간"
         case .waterRise30Min: return String(format: "%.2fm", threshold) + " / 30분"
+        case .estRise3h: return String(format: "%.2fm", threshold) + " / 3시간"
         case .other: return plain(threshold, unit: observation.unit)
         }
     }
@@ -58,6 +60,7 @@ nonisolated enum ObservationFormat {
         switch kind {
         case .rainLastHour: "강수"
         case .waterRise30Min: "수위"
+        case .estRise3h: "AI 추정 수위"
         case .other: nil
         }
     }

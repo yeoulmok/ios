@@ -80,4 +80,16 @@ struct ObservationFormatTests {
         #expect(ObservationFormat.accessibilityLabel(rain, now: Self.now)
                 == "강수, 원주 신림(AWS), 관측 시각 21:50, 실측값 18.0mm / 1시간, 기준값 15.0mm / 1시간")
     }
+
+    // MARK: AI estimate (#63)
+
+    @Test func estimatedRiseReadsAsThreeHours() {
+        let estimate = ValleyObservation(kind: .estRise3h, station: "AI 추정(강수 기반)",
+                                         observedAt: nil, value: 0.04, unit: "m", threshold: 0.3,
+                                         note: nil, isEstimated: true)
+        #expect(ObservationFormat.value(estimate) == "+0.04m / 3시간")
+        #expect(ObservationFormat.threshold(estimate) == "0.30m / 3시간")
+        #expect(ObservationFormat.station(estimate) == "AI 추정(강수 기반) (AI 추정 수위)")
+        #expect(ObservationFormat.accessibilityLabel(estimate).hasPrefix("AI 추정 수위, "))
+    }
 }
