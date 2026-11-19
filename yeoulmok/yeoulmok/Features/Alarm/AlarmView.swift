@@ -52,7 +52,6 @@ struct AlarmView: View {
             await viewModel.load()
         }
         .onDisappear { sound.stop() }
-        .accessibilityIdentifier("alarm")
     }
 
     @ViewBuilder
@@ -63,7 +62,13 @@ struct AlarmView: View {
         case let .loaded(detail):
             Text(detail.name)
                 .font(.largeTitle.weight(.heavy))
-            StatusBadge(level: detail.level, size: .large)
+            // White badge: the level's own color would vanish on the same background.
+            Text(detail.level.title)
+                .font(.title3.weight(.heavy))
+                .foregroundStyle(detail.level.badgeBackground)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 6)
+                .background(.white, in: Capsule())
                 .urgentPulse(detail.level)
             Text(detail.summary)
                 .font(.title2.weight(.bold))
@@ -71,7 +76,10 @@ struct AlarmView: View {
             if let water = detail.observations.first(where: { $0.kind == .waterRise30Min }) {
                 HStack(spacing: 6) {
                     Text("수위 30분")
-                    ChangeIndicator(change: water.value)
+                    if let direction = ChangeDirection(water.value) {
+                        Image(systemName: direction.symbol)
+                            .accessibilityLabel(direction.title)
+                    }
                     Text(ObservationFormat.shortValue(water)).fontWeight(.bold)
                     if let limit = ObservationFormat.shortThreshold(water) {
                         Text("/ 기준 \(limit)").opacity(0.8)
