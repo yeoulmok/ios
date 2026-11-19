@@ -84,4 +84,53 @@ struct HomeFeaturedTests {
 
         #expect(viewModel.featured?.reason == .firstInList)
     }
+
+    // MARK: #67 a location that does not come in time
+
+    @Test func slowLocationDoesNotHoldBackTheList() async throws {
+        let permission = FakeLocationPermission(.allowed)
+        permission.delay = .seconds(30)
+        let viewModel = HomeViewModel(repository: try MockValleyRepository(), location: permission,
+                                      locationTimeout: .milliseconds(100))
+        let start = ContinuousClock.now
+
+        await viewModel.load()
+
+        #expect(ContinuousClock.now - start < .seconds(5))
+        guard case .loaded = viewModel.state else {
+            Issue.record("home should show the list, not wait for the location")
+            return
+        }
+        // Without a location: the most urgent valley, its distance unknown.
+        #expect(viewModel.featured?.valley.id == 4)
+        #expect(viewModel.featured?.distanceMeters == nil)
+    }
+
+    @Test func slowLocationFallsBackToHomeOrderWhenNothingIsUrgent() async {
+        let list = ValleyListResponse(updatedAt: date, source: "자료",
+                                      valleys: [summary(1, .safe, kmNorth: 30), summary(3, .safe, kmNorth: 2)])
+        let permission = FakeLocationPermission(.allowed)
+        permission.delay = .seconds(30)
+        let viewModel = HomeViewModel(repository: StubRepository(list: { _ in list }), location: permission,
+                                      locationTimeout: .milliseconds(100))
+
+        await viewModel.load()
+
+        #expect(viewModel.featured?.reason == .firstInList)
+    }
+
+    @Test func locationInTimeIsStillUsed() async {
+        let list = ValleyListResponse(updatedAt: date, source: "자료",
+                                      valleys: [summary(1, .safe, kmNorth: 30), summary(3, .safe, kmNorth: 2)])
+        let permission = FakeLocationPermission(.allowed)
+        permission.location = .success(.init(latitude: 37, longitude: 128))
+        permission.delay = .milliseconds(20)
+        let viewModel = HomeViewModel(repository: StubRepository(list: { _ in list }), location: permission,
+                                      locationTimeout: .seconds(2))
+
+        await viewModel.load()
+
+        #expect(viewModel.featured?.valley.id == 3)
+        #expect(viewModel.featured?.reason == .closest)
+    }
 }
