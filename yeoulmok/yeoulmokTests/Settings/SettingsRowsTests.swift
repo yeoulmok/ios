@@ -20,7 +20,7 @@ struct SettingsRowsTests {
         #expect(rows[0].action == .open(URL(string: "https://example.com/terms")))
         #expect(rows[1].action == .open(URL(string: "https://example.com/privacy")))
         #expect(rows[2].action == .dataSource)
-        #expect(rows[3].action == .open(URL(string: "mailto:help@example.com")))
+        #expect(rows[3].action == .contact)
         let allEnabled = rows.allSatisfy(\.isEnabled)
         #expect(allEnabled)
     }
@@ -30,7 +30,8 @@ struct SettingsRowsTests {
         let rows = SettingsRows.rows(for: empty)
         #expect(rows.count == 4)
         let enabled = rows.filter(\.isEnabled).map(\.id)
-        #expect(enabled == ["dataSource"])
+        // 문의하기 opens its own screen (#92), with the agencies even before the email is set.
+        #expect(enabled == ["dataSource", "contact"])
     }
 
     @Test func versionText() {
