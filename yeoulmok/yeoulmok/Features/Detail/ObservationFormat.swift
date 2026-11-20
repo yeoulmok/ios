@@ -46,11 +46,11 @@ nonisolated enum ObservationFormat {
 
     // MARK: Gauge card (#63)
 
-    /// Card title: `강수 1시간`, `수위 30분`, `3시간 수위 상승`; a kind the app does not know: the station.
+    /// Card title: `강수 1시간`, `30분 상승`, `3시간 수위 상승`; a kind the app does not know: the station.
     static func title(_ observation: ValleyObservation) -> String {
         switch observation.kind {
         case .rainLastHour: "강수 1시간"
-        case .waterRise30Min: "수위 30분"
+        case .waterRise30Min: "30분 상승"
         case .estRise3h: "3시간 수위 상승"
         case .other: observation.station
         }

@@ -59,7 +59,7 @@ struct FeaturedValleyCard: View {
                     value: valley.rainLastHourMM,
                     threshold: threshold(.rainLastHour))
                 MetricTile(
-                    title: "수위 30분",
+                    title: "30분 상승",
                     valueText: ValleyFormat.waterRise(valley.waterRise30MinM),
                     thresholdText: threshold(.waterRise30Min).map { String(format: "%.2fm", $0) },
                     value: valley.waterRise30MinM,
@@ -93,7 +93,7 @@ struct FeaturedValleyCard: View {
         var parts = [featured.reason.title, valley.name, placeLine, "단계 \(valley.level.title)"]
         if let detail { parts.append(detail.summary) }
         parts.append("강수 1시간 \(ValleyFormat.rainfall(valley.rainLastHourMM))")
-        parts.append("수위 30분 \(ValleyFormat.waterRise(valley.waterRise30MinM))")
+        parts.append("30분 상승 \(ValleyFormat.waterRise(valley.waterRise30MinM))")
         parts.append("관측 \(ValleyFormat.timeAgo(valley.observedAt))")
         if valley.isStale { parts.append(StaleLabel.text) }
         if let action = detail?.actions.first { parts.append("지금 할 일 \(action)") }

@@ -34,7 +34,7 @@ struct ObservationFormatTests {
     @Test func zeroIsShownAsZero() {
         // 0 mm means "no rain": a real value, unlike nil.
         #expect(ObservationFormat.value(Self.observation(.rainLastHour, value: 0)) == "0.0mm / 1시간")
-        #expect(ObservationFormat.value(Self.observation(.waterRise30Min, value: 0, unit: "m")) == "0.00m / 30분")
+        #expect(ObservationFormat.value(Self.observation(.waterRise30Min, value: 0, unit: "m")) == "+0.00m / 30분")
     }
 
     @Test func missingValueIsDashNeverZero() {
@@ -107,7 +107,7 @@ struct ObservationCardFormatTests {
 
     @Test func titles() {
         #expect(ObservationFormat.title(observation(.rainLastHour, value: 1)) == "강수 1시간")
-        #expect(ObservationFormat.title(observation(.waterRise30Min, value: 1)) == "수위 30분")
+        #expect(ObservationFormat.title(observation(.waterRise30Min, value: 1)) == "30분 상승")
         #expect(ObservationFormat.title(observation(.estRise3h, value: 1)) == "3시간 수위 상승")
         #expect(ObservationFormat.title(observation(.other, value: 1)) == "원주 신림(AWS)")
     }

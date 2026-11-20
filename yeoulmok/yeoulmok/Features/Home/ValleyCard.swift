@@ -46,19 +46,16 @@ struct ValleyCard: View {
         return parts.joined(separator: ", ")
     }
 
-    /// "수위 +0.18m · 강수 32.5mm": the row's short line. Missing values read "-".
+    /// "30분 상승 +0.18m · 강수 32.5mm": the row's short line. Missing values read "-".
     static func shortObservationText(for valley: ValleySummary) -> String {
-        "수위 \(ValleyFormat.waterRise(valley.waterRise30MinM)) · 강수 \(ValleyFormat.rainfall(valley.rainLastHourMM))"
+        "30분 상승 \(ValleyFormat.waterRise(valley.waterRise30MinM)) · 강수 \(ValleyFormat.rainfall(valley.rainLastHourMM))"
     }
 
-    /// "상류 1시간 강수 18.0mm · 하류 수위 +0.22m/30분" (VoiceOver).
-    /// "/30분" is dropped when the rise is missing, so it reads "하류 수위 -".
+    /// "상류 1시간 강수 18.0mm · 하류 30분 상승 +0.22m" (VoiceOver). Missing values read "-".
     static func observationText(for valley: ValleySummary) -> String {
         let rain = ValleyFormat.rainfall(valley.rainLastHourMM)
-        let rise = valley.waterRise30MinM == nil
-            ? ValleyFormat.missing
-            : ValleyFormat.waterRise(valley.waterRise30MinM) + "/30분"
-        return "상류 1시간 강수 \(rain) · 하류 수위 \(rise)"
+        let rise = ValleyFormat.waterRise(valley.waterRise30MinM)
+        return "상류 1시간 강수 \(rain) · 하류 30분 상승 \(rise)"
     }
 }
 
