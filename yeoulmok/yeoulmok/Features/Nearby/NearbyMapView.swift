@@ -9,7 +9,7 @@ import SwiftUI
 ///
 /// The location never leaves the phone. The map pictures themselves come from Apple Maps.
 struct NearbyMapView: View {
-    static let height: CGFloat = 260
+    static let height: CGFloat = 320
 
     let user: CLLocationCoordinate2D
     let valleys: [NearbyValley]
@@ -42,19 +42,19 @@ struct NearbyMapView: View {
             MapScaleView()
         }
         .frame(height: Self.height)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(.separator)))
+        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.large, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: Theme.Radius.large, style: .continuous)
+            .strokeBorder(Color.white.opacity(0.22), lineWidth: 1))
+        // No slide-in: the design has no animation (#72).
         .overlay(alignment: .bottom) {
             if let selected = valleys.first(where: { $0.id == selectedID }) {
                 NavigationLink(value: ValleyRoute(valleyID: selected.id)) {
-                    NearbyRow(nearby: selected, identifier: "nearby.map.card")
+                    NearbyRow(nearby: selected, identifier: "nearby.map.card", onMap: true)
                 }
                 .buttonStyle(.plain)
                 .padding(8)
-                .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
-        .animation(.easeOut(duration: 0.2), value: selectedID)
         // A refresh can bring a new location or new valleys: show them all again.
         .onChange(of: valleys) {
             position = Self.startPosition(user: user, valleys: valleys)
