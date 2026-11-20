@@ -189,6 +189,29 @@ extension ServerValleyRepositoryTests {
     }
 }
 
+extension ServerValleyRepositoryTests {
+    /// #90: the history asks for 3 hours at item 12 and decodes the answer.
+    @Test func historyUsesItsEndpointAndHours() async throws {
+        let body = #"""
+        {"updated_at": "2026-11-20T10:35", "valley_id": 1, "hours": 3, "step_minutes": 10, "has_water": true,
+         "thresholds": {"rain_1h_mm": {"caution": 15.0, "danger": 25.0, "evacuate": 40.0},
+                        "water_rise_30m_m": {"caution": 0.1, "danger": 0.2, "evacuate": 0.3}},
+         "points": [{"at": "2026-11-20T10:30", "rain_1h_mm": 1.0, "water_level_m": 0.21,
+                     "water_rise_30m_m": 0.0, "level": "safe"}],
+         "source": "자료: 한강홍수통제소, 기상청"}
+        """#
+        let server = FakeServer { _ in (200, body) }
+        let repository = server.repository(savedID: "d_saved")
+
+        let history = try await repository.history(valleyID: 1, hours: 3)
+
+        #expect(history.points.map(\.waterLevelM) == [0.21])
+        let request = try #require(server.requests.first)
+        #expect(request.line == "GET /api/valleys/1/history")
+        #expect(request.query == "hours=3")
+    }
+}
+
 /// Records requests and answers `/devices` with `d_1`, `d_2`, ... (or 500 while
 /// `failRegistration`); other paths go to `answer`.
 private final class FakeServer: @unchecked Sendable {

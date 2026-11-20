@@ -6,6 +6,7 @@ import Foundation
 actor MockValleyRepository: ValleyRepository {
     private let list: ValleyListResponse
     private let details: [Int: ValleyDetail]
+    private let histories: [Int: ValleyHistory]
     /// Subscribed valley ids, oldest first (the server orders `/me/valleys` this way).
     private var subscriptionOrder: [Int]
     /// When true, every subscribe/unsubscribe fails like a lost connection.
@@ -30,6 +31,7 @@ actor MockValleyRepository: ValleyRepository {
         self.failsRepeatedLoads = failsRepeatedLoads
         list = try MockData.valleyList(bundle: bundle)
         details = Dictionary(uniqueKeysWithValues: try MockData.valleyDetails(bundle: bundle).map { ($0.id, $0) })
+        histories = Dictionary(uniqueKeysWithValues: try MockData.valleyHistories(bundle: bundle).map { ($0.valleyID, $0) })
         subscriptionOrder = list.valleys.filter(\.isSubscribed).map(\.id)
     }
 
@@ -87,6 +89,14 @@ actor MockValleyRepository: ValleyRepository {
             isAIFallback: false, level: detail.level,
             observedAt: detail.observations.compactMap(\.observedAt).max(),
             disclaimer: detail.disclaimer, source: detail.source)
+    }
+
+    /// The bundled 3-hour history (API spec v0.6 example shape). Valleys without one
+    /// fail like the server before it had this endpoint, so the card stays hidden.
+    func history(valleyID: Int, hours: Int) async throws -> ValleyHistory {
+        try failLoadIfAsked(key: "history-\(valleyID)")
+        guard let history = histories[valleyID] else { throw APIError.valleyNotFound }
+        return history
     }
 
     private func failLoadIfAsked(key: String) throws {

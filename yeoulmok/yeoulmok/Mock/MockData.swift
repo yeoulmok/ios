@@ -18,6 +18,11 @@ nonisolated enum MockData {
         try load([ValleyDetail].self, from: "valley_details", bundle: bundle)
     }
 
+    /// One `GET /valleys/{id}/history?hours=3` response per mock valley that has one.
+    static func valleyHistories(bundle: Bundle = .main) throws -> [ValleyHistory] {
+        try load([ValleyHistory].self, from: "valley_histories", bundle: bundle)
+    }
+
     /// Finds `<fileName>.json` in the app bundle and decodes it with the same decoder as real responses.
     static func load<T: Decodable>(_ type: T.Type, from fileName: String, bundle: Bundle = .main) throws -> T {
         guard let url = bundle.url(forResource: fileName, withExtension: "json") else {

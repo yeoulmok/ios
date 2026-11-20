@@ -6,13 +6,16 @@
     "ai_fallback": false,
     "observations": [
       {"type": "rain_1h", "station": "원주 신림(AWS)", "observed_at": "2026-11-07T21:50",
-       "value": 18.0, "unit": "mm", "threshold": 15.0, "note": null},
+       "value": 18.0, "unit": "mm", "threshold": 15.0, "note": null,
+       "thresholds": {"caution": 15.0, "danger": 25.0, "evacuate": 40.0}},
       {"type": "water_rise_30m", "station": "원주시(동부교)", "observed_at": "2026-11-07T21:50",
-       "value": 0.06, "unit": "m", "threshold": 0.1, "note": null}
+       "value": 0.06, "unit": "m", "threshold": 0.1, "note": null,
+       "thresholds": {"caution": 0.1, "danger": 0.2, "evacuate": 0.3}}
     ],
     "actions": ["물가에서 떨어지기", "높은 곳으로 이동 준비"],
     "disclaimer": "판단 보조 정보이며 공식 재난경보를 대체하지 않습니다.",
     "source": "자료: 한강홍수통제소, 기상청",
+    "rain_24h_mm": 31.0,
     "subscribed": true, "stale": false
   },
   {
@@ -54,13 +57,16 @@
     "ai_fallback": false,
     "observations": [
       {"type": "rain_1h", "station": "예시 강수 관측소", "observed_at": "2026-11-07T21:40",
-       "value": 32.5, "unit": "mm", "threshold": 15.0, "note": null},
+       "value": 32.5, "unit": "mm", "threshold": 15.0, "note": null,
+       "thresholds": {"caution": 15.0, "danger": 25.0, "evacuate": 40.0}},
       {"type": "water_rise_30m", "station": "예시 수위 관측소", "observed_at": "2026-11-07T21:40",
-       "value": 0.18, "unit": "m", "threshold": 0.1, "note": null}
+       "value": 0.18, "unit": "m", "threshold": 0.1, "note": null,
+       "thresholds": {"caution": 0.1, "danger": 0.2, "evacuate": 0.3}}
     ],
     "actions": ["즉시 물에서 나오기", "소지품을 챙겨 높은 곳으로 이동"],
     "disclaimer": "판단 보조 정보이며 공식 재난경보를 대체하지 않습니다.",
     "source": "자료: 한강홍수통제소, 기상청",
+    "rain_24h_mm": 58.5,
     "subscribed": true, "stale": true
   },
   {
@@ -70,13 +76,16 @@
     "ai_fallback": false,
     "observations": [
       {"type": "rain_1h", "station": "예시 강수 관측소", "observed_at": "2026-11-07T21:50",
-       "value": 55.0, "unit": "mm", "threshold": 15.0, "note": null},
+       "value": 55.0, "unit": "mm", "threshold": 15.0, "note": null,
+       "thresholds": {"caution": 15.0, "danger": 25.0, "evacuate": 40.0}},
       {"type": "water_rise_30m", "station": "예시 수위 관측소", "observed_at": "2026-11-07T21:50",
-       "value": 0.42, "unit": "m", "threshold": 0.1, "note": null}
+       "value": 0.42, "unit": "m", "threshold": 0.1, "note": null,
+       "thresholds": {"caution": 0.1, "danger": 0.2, "evacuate": 0.3}}
     ],
     "actions": ["즉시 높은 곳으로 대피", "계곡을 건너지 않기", "고립되면 119 신고"],
     "disclaimer": "판단 보조 정보이며 공식 재난경보를 대체하지 않습니다.",
     "source": "자료: 한강홍수통제소, 기상청",
+    "rain_24h_mm": 96.0,
     "subscribed": false, "stale": false
   }
 ]

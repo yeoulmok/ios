@@ -88,7 +88,12 @@ struct ValleyDetailView: View {
                     .font(.headline)
                     .foregroundStyle(Theme.Text.primary)
                     .padding(.top, 24)
-                ObservationSection(observations: detail.observations)
+                ObservationSection(observations: detail.observations, rainLast24hMM: detail.rainLast24hMM)
+                // APP-DTL-09 (#90): only when the server sent a history.
+                if let history = viewModel.history {
+                    HistoryCard(history: history)
+                        .padding(.top, 4)
+                }
                 if let explanation = detail.aiExplanation, !explanation.isEmpty {
                     AIExplanationBox(text: explanation, isFallback: detail.isAIFallback)
                         .padding(.top, 4)

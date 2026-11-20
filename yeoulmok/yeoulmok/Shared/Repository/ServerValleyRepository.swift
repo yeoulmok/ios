@@ -46,6 +46,11 @@ nonisolated struct ServerValleyRepository: ValleyRepository {
         try await send(.post, "valleys/\(valleyID)/ask", body: AskRequest(question: question))
     }
 
+    func history(valleyID: Int, hours: Int) async throws -> ValleyHistory {
+        try await send(.get, "valleys/\(valleyID)/history",
+                       query: [URLQueryItem(name: "hours", value: String(hours))], needsDevice: false)
+    }
+
     private func send<Response: Decodable>(
         _ method: APIClient.Method, _ path: String, query: [URLQueryItem] = [],
         body: (any Encodable & Sendable)? = nil, needsDevice: Bool = true
