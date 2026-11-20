@@ -25,7 +25,7 @@ struct DetailFooter: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(DisclaimerText.display(disclaimer))
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.Text.source)
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityIdentifier("detail.disclaimer")
             SourceFooter(source: source)

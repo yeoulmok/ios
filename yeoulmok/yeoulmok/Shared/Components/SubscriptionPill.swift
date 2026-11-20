@@ -6,13 +6,14 @@ struct SubscriptionPill: View {
     let isSubscribed: Bool
 
     var body: some View {
+        // On the glass toolbar (#71): subscribed reads as plain white text,
+        // not subscribed as a solid white pill, the one action to take.
         Text(Self.title(isSubscribed: isSubscribed))
-            .font(.caption.weight(.semibold))
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
-            .foregroundStyle(isSubscribed ? Color.primary : Color(.systemBackground))
-            .background(isSubscribed ? Color(.systemGray6) : Color.primary, in: Capsule())
-            .overlay(Capsule().stroke(isSubscribed ? Color(.systemGray3) : .clear))
+            .font(.subheadline.weight(.semibold))
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .foregroundStyle(isSubscribed ? Color.white : Color(hex: 0x101828))
+            .background(isSubscribed ? Color.clear : Color.white, in: Capsule())
     }
 
     /// Already subscribed reads as a state ("구독중"), not subscribed as the action ("구독").
@@ -27,4 +28,5 @@ struct SubscriptionPill: View {
         SubscriptionPill(isSubscribed: false)
     }
     .padding()
+    .background(Theme.night)
 }

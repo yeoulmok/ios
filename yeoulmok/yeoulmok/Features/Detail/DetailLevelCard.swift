@@ -1,10 +1,11 @@
 import SwiftUI
 
-/// Top of the alert detail (APP-DTL-07, #63). Not in Figma:
+/// Top of the alert detail, drawn on the photo (APP-DTL-07, #63; design #71):
 ///
-///     [주의] 🕘 자료 지연                 관측 12분 전
+///     금대리 계곡
+///     관측 12분 전  🕘 자료 지연
+///     [주의]  상류에 비가 많이 오고 있어요
 ///     안전 ─ [주의] ─ 위험 ─ 대피
-///     상류에 비가 많이 오고 있어요
 ///     ✦ AI 추정으로 판정했어요            (only when `estimated`)
 struct DetailLevelCard: View {
     /// Temporary wording until QA: the level came from an AI estimate (API spec v0.4).
@@ -13,35 +14,43 @@ struct DetailLevelCard: View {
     let detail: ValleyDetail
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 10) {
-                StatusBadge(level: detail.level, size: .large)
-                    .urgentPulse(detail.level)
-                // Next to the level it qualifies: the judgment uses late data.
+        VStack(alignment: .leading, spacing: 0) {
+            // The navigation bar does not draw the name (#71), so it is the header here.
+            Text(detail.name)
+                .font(.largeTitle.weight(.bold))
+                .foregroundStyle(Theme.Text.primary)
+                .accessibilityAddTraits(.isHeader)
+            HStack(spacing: 8) {
+                Text("관측 \(ValleyFormat.timeAgo(Self.latestObservation(in: detail)))")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.Text.label)
+                    .accessibilityIdentifier("detail.observedAgo")
+                // Next to the time it qualifies: the judgment uses late data.
                 if detail.isStale {
                     StaleLabel()
                 }
-                Spacer(minLength: 0)
-                Text("관측 \(ValleyFormat.timeAgo(Self.latestObservation(in: detail)))")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .accessibilityIdentifier("detail.observedAgo")
             }
+            .padding(.top, 4)
+            HStack(alignment: .center, spacing: 10) {
+                StatusBadge(level: detail.level, size: .large)
+                Text(detail.summary)
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(Theme.Text.summary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("detail.summary")
+            }
+            .padding(.top, 18)
             LevelScale(level: detail.level)
-            Text(detail.summary)
-                .font(.title3.weight(.bold))
-                .accessibilityIdentifier("detail.summary")
+                .padding(.top, 14)
             if detail.isEstimated {
                 Label(Self.estimatedText, systemImage: "sparkles")
                     .font(.footnote.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Theme.Text.body)
                     .accessibilityIdentifier("detail.estimated")
+                    .padding(.top, 10)
             }
         }
-        .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(detail.level.cardTint.opacity(0.08), in: RoundedRectangle(cornerRadius: 16))
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(detail.level.cardTint.opacity(0.6), lineWidth: 1.5))
     }
 
     /// The newest measured observation time (AI estimates are not observations).
@@ -54,9 +63,10 @@ struct DetailLevelCard: View {
 #Preview {
     let details = try! MockData.valleyDetails(bundle: .main)
     ScrollView {
-        VStack(spacing: 16) {
+        VStack(spacing: 32) {
             ForEach(details) { DetailLevelCard(detail: $0) }
         }
         .padding()
     }
+    .background(PhotoBackdrop(style: .normal))
 }

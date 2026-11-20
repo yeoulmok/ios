@@ -13,12 +13,17 @@ struct ValleyDetailView: View {
 
     var body: some View {
         content
-            // Figma 04: the valley name is the large title under "‹ 뒤로".
+            .background { PhotoBackdrop(style: isFailed ? .offline : .normal, photoHeight: isFailed ? nil : 520) }
+            // The name is drawn on the photo (#71); the title stays for VoiceOver and tests.
             .navigationTitle(title)
-            .navigationBarTitleDisplayMode(.large)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.hidden, for: .navigationBar)
             // Figma 04 has no tab bar: the detail covers the whole screen.
             .toolbar(.hidden, for: .tabBar)
             .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Color.clear.frame(width: 1, height: 1).accessibilityHidden(true)
+                }
                 // APP-DTL-06 (#57): subscribing happens here, not in the search list.
                 // Not in Figma; placed like the settings gear on home.
                 if case let .loaded(detail) = viewModel.state {
@@ -74,11 +79,13 @@ struct ValleyDetailView: View {
                 if let asOf = viewModel.offlineAsOf {
                     OfflineBanner(asOf: asOf)
                 }
-                // #63: level, scale, summary in one card.
+                // #63: name, level, summary on the photo (#71).
                 DetailLevelCard(detail: detail)
+                    .padding(.top, 8)
                 Text("지금 수치")
                     .font(.headline)
-                    .padding(.top, 8)
+                    .foregroundStyle(Theme.Text.primary)
+                    .padding(.top, 24)
                 ObservationSection(observations: detail.observations)
                 if let explanation = detail.aiExplanation, !explanation.isEmpty {
                     AIExplanationBox(text: explanation, isFallback: detail.isAIFallback)
@@ -90,10 +97,15 @@ struct ValleyDetailView: View {
                     .padding(.top, 12)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding()
+            .padding(.horizontal, 20)
+            .padding(.bottom, 24)
         }
         // Keeps the detail while reloading; a failed refresh keeps it too (view model).
         .refreshable { await viewModel.load() }
+    }
+
+    private var isFailed: Bool {
+        if case .failed = viewModel.state { true } else { false }
     }
 
     private var title: String {

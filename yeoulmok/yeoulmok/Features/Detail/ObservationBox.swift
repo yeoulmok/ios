@@ -13,7 +13,7 @@ struct ObservationSection: View {
             // Saying so, so "no evidence" never looks like "not drawn yet".
             Text(Self.emptyMessage)
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.Text.body)
                 .accessibilityIdentifier("detail.observations.empty")
         } else {
             VStack(spacing: 8) {
@@ -48,7 +48,7 @@ struct ObservationBox: View {
                     .font(.caption.weight(.semibold))
                     .padding(.horizontal, 8)
                     .padding(.vertical, 3)
-                    .background(Color(.systemGray5), in: Capsule())
+                    .background(Color.white.opacity(0.14), in: Capsule())
             }
             ThresholdGauge(
                 title: ObservationFormat.title(observation),
@@ -59,14 +59,17 @@ struct ObservationBox: View {
                 change: observation.kind == .rainLastHour ? nil : observation.value)
             Text(ObservationFormat.footnote(observation))
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.Text.label)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
+        .glassCard()
+        // AI estimates keep a dashed outline, so they never look measured.
         .overlay {
-            RoundedRectangle(cornerRadius: 12)
-                .strokeBorder(Color(.systemGray4), style: observation.isEstimated
-                              ? StrokeStyle(lineWidth: 1, dash: [5, 3]) : StrokeStyle(lineWidth: 1))
+            if observation.isEstimated {
+                RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous)
+                    .strokeBorder(Color.white.opacity(0.6), style: StrokeStyle(lineWidth: 1, dash: [5, 3]))
+            }
         }
         // VoiceOver reads the card as one sentence, the same as the old table.
         .accessibilityElement(children: .ignore)
@@ -89,15 +92,16 @@ struct AIExplanationBox: View {
                 .font(.headline)
             Text(text)
                 .font(.subheadline)
+                .foregroundStyle(Theme.Text.summary)
             if isFallback {
                 Text(Self.fallbackNote)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Theme.Text.label)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
-        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 12))
+        .listRowSurface(cornerRadius: Theme.Radius.card)
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("detail.aiExplanation")
     }
