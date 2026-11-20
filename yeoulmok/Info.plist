@@ -6,6 +6,8 @@
 	<string>$(API_BASE_URL)</string>
 	<key>ContactEmail</key>
 	<string>$(CONTACT_EMAIL)</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>내 주변 계곡을 보여 드리는 데 사용해요. 위치는 휴대폰 안에서만 사용되고 서버로 보내지 않아요.</string>
 	<key>PrivacyURL</key>
