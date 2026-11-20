@@ -151,6 +151,44 @@ struct ServerValleyRepositoryTests {
     }
 }
 
+extension ServerValleyRepositoryTests {
+    private static let answer = #"""
+    {"updated_at": "2026-11-19T10:02", "valley_id": 1, "question": "여기 들어가도 돼요?",
+     "answer": "지금 금대리 계곡은 '안전' 단계예요.", "ai_fallback": false, "level": "safe",
+     "observed_at": "2026-11-19T09:50", "disclaimer": "판단 보조 정보이며 공식 재난경보를 대체하지 않습니다.",
+     "source": "자료: 한강홍수통제소, 기상청"}
+    """#
+
+    /// #64: only the question goes to the server, with the device header.
+    @Test func askPostsOnlyTheQuestionAndDecodes() async throws {
+        let server = FakeServer { _ in (200, Self.answer) }
+        let repository = server.repository(savedID: "d_saved")
+
+        let answer = try await repository.ask(valleyID: 1, question: "여기 들어가도 돼요?")
+
+        #expect(answer.answer == "지금 금대리 계곡은 '안전' 단계예요.")
+        #expect(answer.isAIFallback == false)
+        #expect(answer.level == .safe)
+        #expect(answer.observedAt == ServerDate.parse("2026-11-19T09:50"))
+        let request = try #require(server.requests.first)
+        #expect(request.line == "POST /api/valleys/1/ask")
+        #expect(request.deviceID == "d_saved")
+        let body = try JSONSerialization.jsonObject(with: Data((request.body ?? "").utf8)) as? [String: String]
+        #expect(body == ["question": "여기 들어가도 돼요?"])
+    }
+
+    @Test func askPassesServerErrorsThrough() async throws {
+        let server = FakeServer { _ in
+            (429, #"{"error": {"code": "TOO_MANY_QUESTIONS", "message": "질문이 많아요. 잠시 후 다시 물어봐 주세요"}}"#)
+        }
+        let repository = server.repository(savedID: "d_saved")
+
+        await #expect(throws: APIError.tooManyQuestions) {
+            try await repository.ask(valleyID: 1, question: "지금 비 많이 와요?")
+        }
+    }
+}
+
 /// Records requests and answers `/devices` with `d_1`, `d_2`, ... (or 500 while
 /// `failRegistration`); other paths go to `answer`.
 private final class FakeServer: @unchecked Sendable {
@@ -159,6 +197,8 @@ private final class FakeServer: @unchecked Sendable {
         let line: String
         let query: String?
         let deviceID: String?
+        /// The JSON body, when the request has one (#64).
+        var body: String? = nil
     }
 
     private let lock = NSLock()
@@ -176,11 +216,12 @@ private final class FakeServer: @unchecked Sendable {
     init(failRegistration: Bool = false, answer: @escaping @Sendable (Request) -> (Int, String)) {
         self.answer = answer
         self.registrationFails = failRegistration
-        client = StubURLProtocol.makeClient { [unowned self] request, _ in
+        client = StubURLProtocol.makeClient { [unowned self] request, body in
             let recordedRequest = Request(
                 line: "\(request.httpMethod ?? "") \(request.url?.path() ?? "")",
                 query: request.url?.query(percentEncoded: false),
-                deviceID: request.value(forHTTPHeaderField: "X-Device-Id"))
+                deviceID: request.value(forHTTPHeaderField: "X-Device-Id"),
+                body: body.map { String(decoding: $0, as: UTF8.self) })
             let (status, body) = lock.withLock { () -> (Int, String) in
                 recorded.append(recordedRequest)
                 if recordedRequest.line == "POST /api/devices" {
