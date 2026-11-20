@@ -13,7 +13,7 @@ struct StaleLabel: View {
             Text(Self.text)
         }
         .font(.caption)
-        .foregroundStyle(.secondary)
+        .foregroundStyle(Theme.stale)
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("staleLabel")
     }

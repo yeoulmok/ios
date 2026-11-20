@@ -1,47 +1,57 @@
 import SwiftUI
 
-/// One subscribed valley on the home list (Figma 01 v2 card).
+/// One subscribed valley on the home list: a short row on the dark area (#71).
 ///
-///     금대리 계곡                 [위험]
-///     원주시 판부면
-///     상류 1시간 강수 18.0mm · 하류 수위 +0.22m/30분
-///     관측 21:50  🕘 자료 지연   (only when stale)
+///     [위험]  위험 예시 계곡                 21:40
+///             수위 +0.18m · 강수 32.5mm   🕘 자료 지연
+///
+/// The region is not drawn, but VoiceOver still reads it with the full numbers.
 struct ValleyCard: View {
     let valley: ValleySummary
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack(alignment: .firstTextBaseline) {
+        HStack(spacing: 12) {
+            StatusBadge(level: valley.level)
+            VStack(alignment: .leading, spacing: 2) {
                 Text(valley.name)
                     .font(.headline)
-                Spacer()
-                StatusBadge(level: valley.level)
+                    .foregroundStyle(Theme.Text.primary)
+                Text(Self.shortObservationText(for: valley))
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.Text.body)
             }
-            Text(valley.region)
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-            Text(Self.observationText(for: valley))
-                .font(.subheadline)
-                .padding(.top, 2)
-            HStack(spacing: 8) {
-                Text("관측 \(ValleyFormat.observedTime(valley.observedAt))")
+            Spacer(minLength: 8)
+            VStack(alignment: .trailing, spacing: 2) {
+                Text(ValleyFormat.observedTime(valley.observedAt))
                     .font(.caption)
-                    .foregroundStyle(.secondary)
-                // Figma ValleyCard: "관측 21:30  🕘 자료 지연" on one line.
+                    .foregroundStyle(Theme.Text.label)
                 if valley.isStale {
                     StaleLabel()
                 }
             }
         }
-        .padding(16)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 12))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(.separator)))
-        // VoiceOver reads the whole card at once.
-        .accessibilityElement(children: .combine)
+        .listRowSurface()
+        // VoiceOver reads the whole row at once, name first.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityText)
     }
 
-    /// "상류 1시간 강수 18.0mm · 하류 수위 +0.22m/30분".
+    private var accessibilityText: String {
+        var parts = [valley.name, valley.region, valley.level.title, Self.observationText(for: valley),
+                     "관측 \(ValleyFormat.observedTime(valley.observedAt))"]
+        if valley.isStale { parts.append(StaleLabel.text) }
+        return parts.joined(separator: ", ")
+    }
+
+    /// "수위 +0.18m · 강수 32.5mm": the row's short line. Missing values read "-".
+    static func shortObservationText(for valley: ValleySummary) -> String {
+        "수위 \(ValleyFormat.waterRise(valley.waterRise30MinM)) · 강수 \(ValleyFormat.rainfall(valley.rainLastHourMM))"
+    }
+
+    /// "상류 1시간 강수 18.0mm · 하류 수위 +0.22m/30분" (VoiceOver).
     /// "/30분" is dropped when the rise is missing, so it reads "하류 수위 -".
     static func observationText(for valley: ValleySummary) -> String {
         let rain = ValleyFormat.rainfall(valley.rainLastHourMM)
@@ -54,11 +64,12 @@ struct ValleyCard: View {
 
 #Preview("Mock valleys") {
     ScrollView {
-        VStack(spacing: 12) {
+        VStack(spacing: 8) {
             ForEach((try? MockData.valleyList().valleys.sortedForHome()) ?? []) { valley in
                 ValleyCard(valley: valley)
             }
         }
         .padding()
     }
+    .background(Theme.night)
 }

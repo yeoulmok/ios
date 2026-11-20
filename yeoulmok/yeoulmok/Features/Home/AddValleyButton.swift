@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// "+ 계곡 추가" box under the home cards (APP-HOME-02, Figma 01 v2).
+/// "+ 계곡 추가" link next to the "구독한 계곡" header (APP-HOME-02; moved up in #71).
 /// It only reports the tap; the caller decides where to go.
 struct AddValleyButton: View {
     let action: () -> Void
@@ -8,16 +8,11 @@ struct AddValleyButton: View {
     var body: some View {
         Button(action: action) {
             Text("+ 계곡 추가")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .strokeBorder(Color(.separator), style: StrokeStyle(lineWidth: 1, dash: [5, 4]))
-                )
-                // The whole box is tappable, not only the text.
-                .contentShape(RoundedRectangle(cornerRadius: 12))
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Theme.link)
+                // At least 44pt high to tap, though the text is small.
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         // Read as "계곡 추가" without the "+".
@@ -28,4 +23,5 @@ struct AddValleyButton: View {
 #Preview {
     AddValleyButton {}
         .padding()
+        .background(Theme.night)
 }

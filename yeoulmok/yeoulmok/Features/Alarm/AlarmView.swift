@@ -69,7 +69,6 @@ struct AlarmView: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 6)
                 .background(.white, in: Capsule())
-                .urgentPulse(detail.level)
             Text(detail.summary)
                 .font(.title2.weight(.bold))
                 .accessibilityIdentifier("alarm.summary")

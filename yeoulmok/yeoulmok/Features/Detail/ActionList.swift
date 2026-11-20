@@ -11,9 +11,10 @@ struct ActionList: View {
 
     var body: some View {
         if !actions.isEmpty {
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 8) {
                 Text(Self.title)
                     .font(.headline)
+                    .foregroundStyle(Theme.Text.primary)
                     // VoiceOver can jump here with the headings rotor.
                     .accessibilityAddTraits(.isHeader)
                 ForEach(Array(actions.enumerated()), id: \.offset) { index, action in
@@ -22,12 +23,15 @@ struct ActionList: View {
                         Text("·")
                             .accessibilityHidden(true)
                         Text(action)
+                            .foregroundStyle(Theme.Text.summary)
                             .fixedSize(horizontal: false, vertical: true)
                             .accessibilityIdentifier("detail.action.\(index)")
                     }
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(16)
+            .listRowSurface(cornerRadius: Theme.Radius.card)
         }
     }
 }
