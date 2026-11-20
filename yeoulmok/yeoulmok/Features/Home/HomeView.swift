@@ -16,8 +16,16 @@ struct HomeView: View {
 
     var body: some View {
         content
+            .background { backdrop }
+            // The title stays for the back button and VoiceOver, but is not drawn:
+            // the photo and the featured valley are the top of the screen (#71).
             .navigationTitle("여울목")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Color.clear.frame(width: 1, height: 1).accessibilityHidden(true)
+                }
                 // Feature spec IA: settings from a gear at the top of home (not in Figma 01).
                 ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink(value: SettingsRoute()) {
@@ -60,35 +68,55 @@ struct HomeView: View {
         }
     }
 
+    /// Photo for the list (fades into the dark list area), darker for empty and error.
+    @ViewBuilder
+    private var backdrop: some View {
+        switch viewModel.state {
+        case .loading, .loaded: PhotoBackdrop(style: .normal, photoHeight: 600)
+        case .empty: PhotoBackdrop(style: .guide)
+        case .failed: PhotoBackdrop(style: .offline)
+        }
+    }
+
     private func valleyList(_ valleys: [ValleySummary], source: String) -> some View {
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: 12) {
+            LazyVStack(alignment: .leading, spacing: 8) {
                 offlineBanner
-                // APP-HOME-05 (#59): one valley, large, with its numbers.
+                // APP-HOME-05 (#59): one valley, large, with its numbers, on the photo.
                 if let featured = viewModel.featured {
                     NavigationLink(value: ValleyRoute(valleyID: featured.valley.id)) {
                         FeaturedValleyCard(featured: featured, detail: viewModel.featuredDetail)
                     }
                     .buttonStyle(.plain)
                     .accessibilityIdentifier("home.featured")
-                    .padding(.bottom, 8)
+                    .padding(.bottom, 28)
                 }
-                Text("구독한 계곡")
-                    .font(.headline)
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text("구독한 계곡")
+                        .font(.title3.weight(.bold))
+                        .foregroundStyle(Theme.Text.primary)
+                        .accessibilityAddTraits(.isHeader)
+                    Text("\(valleys.count)")
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.Text.label)
+                        .accessibilityLabel("\(valleys.count)곳")
+                    Spacer()
+                    AddValleyButton(action: onAddValley)
+                }
                 ForEach(valleys) { valley in
                     // Only says "open this valley"; RootView decides which screen that is.
                     NavigationLink(value: ValleyRoute(valleyID: valley.id)) {
                         ValleyCard(valley: valley)
                     }
-                    // Keep the card's own colors instead of tinting the text blue.
+                    // Keep the row's own colors instead of tinting the text blue.
                     .buttonStyle(.plain)
                 }
-                AddValleyButton(action: onAddValley)
                 // Figma: the source line sits at the end of the list and scrolls with it.
                 SourceFooter(source: source)
-                    .padding(.top, 4)
+                    .padding(.top, 8)
             }
-            .padding()
+            .padding(.horizontal, 20)
+            .padding(.vertical, 8)
         }
         .refreshable { await viewModel.load() }
     }

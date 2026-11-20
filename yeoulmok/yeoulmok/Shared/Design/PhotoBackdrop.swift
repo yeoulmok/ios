@@ -17,21 +17,28 @@ struct PhotoBackdrop: View {
     }
 
     let style: Style
+    /// How far down the photo reaches; below it is the night color, where lists go.
+    /// `nil`: the whole screen.
+    var photoHeight: CGFloat? = nil
 
     var body: some View {
-        ZStack {
+        ZStack(alignment: .top) {
             Theme.night
             if style != .plain {
                 GeometryReader { proxy in
-                    Image("ValleyPhoto")
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: proxy.size.width, height: proxy.size.height)
-                        .clipped()
-                        .grayscale(grayscale)
-                        .brightness(brightness)
+                    let height = photoHeight ?? proxy.size.height
+                    ZStack {
+                        Image("ValleyPhoto")
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: proxy.size.width, height: height)
+                            .clipped()
+                            .grayscale(grayscale)
+                            .brightness(brightness)
+                        LinearGradient(stops: overlayStops, startPoint: .top, endPoint: .bottom)
+                    }
+                    .frame(width: proxy.size.width, height: height)
                 }
-                LinearGradient(stops: overlayStops, startPoint: .top, endPoint: .bottom)
             }
         }
         .ignoresSafeArea()
