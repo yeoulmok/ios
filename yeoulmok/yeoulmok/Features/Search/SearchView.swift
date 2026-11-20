@@ -28,7 +28,6 @@ struct SearchView: View {
         }
         .background { PhotoBackdrop(style: isFailed ? .offline : .normal, photoHeight: isFailed ? nil : 300) }
         .navigationTitle("계곡 검색")
-        .toolbarBackground(.hidden, for: .navigationBar)
         .task {
             // Runs each time the tab appears, so the list stays current.
             await viewModel.search(query)
@@ -111,6 +110,7 @@ struct SearchView: View {
             .padding(.bottom, 16)
         }
         .scrollDismissesKeyboard(.immediately)
+        .topBarScrollEdge()
         // "아래로 당겨 다시 시도" (OfflineBanner): the same search again.
         .refreshable { await viewModel.retry() }
     }

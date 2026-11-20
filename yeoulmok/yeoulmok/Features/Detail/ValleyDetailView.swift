@@ -20,7 +20,6 @@ struct ValleyDetailView: View {
             // The name is drawn on the photo (#71); the title stays for VoiceOver and tests.
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(.hidden, for: .navigationBar)
             // Figma 04 has no tab bar: the detail covers the whole screen.
             .toolbar(.hidden, for: .tabBar)
             .toolbar {
@@ -106,6 +105,7 @@ struct ValleyDetailView: View {
             .padding(.bottom, 24)
         }
         .scrollDismissesKeyboard(.interactively)
+        .topBarScrollEdge()
         // Keeps the detail while reloading; a failed refresh keeps it too (view model).
         .refreshable { await viewModel.load() }
     }

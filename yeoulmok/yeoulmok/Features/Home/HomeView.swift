@@ -21,7 +21,6 @@ struct HomeView: View {
             // the photo and the featured valley are the top of the screen (#71).
             .navigationTitle("여울목")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     Color.clear.frame(width: 1, height: 1).accessibilityHidden(true)
@@ -119,6 +118,7 @@ struct HomeView: View {
             .padding(.vertical, 8)
         }
         .refreshable { await viewModel.load() }
+        .topBarScrollEdge()
     }
 
     /// Above the last received data when the latest request failed (APP-COM-07).
