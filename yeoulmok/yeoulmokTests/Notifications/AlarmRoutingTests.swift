@@ -18,14 +18,27 @@ struct AlarmRoutingTests {
 
     @Test func confirmClosesTheAlarmAndOpensTheDetail() {
         let router = PushRouter()
-        router.raiseAlarm(valleyID: 4, playsSound: true)
-        #expect(router.alarm == .init(valleyID: 4, playsSound: true))
+        router.raiseAlarm(valleyID: 4, level: .danger, playsSound: true)
+        #expect(router.alarm == .init(valleyID: 4, level: .danger, playsSound: true))
         #expect(router.pendingValleyID == nil)
 
         router.confirmAlarm()
 
         #expect(router.alarm == nil)
         #expect(router.take() == 4)
+    }
+
+    /// #85: each level has the sound a person picked, and the file is in the app bundle
+    /// (a push `sound` naming a missing file falls back to the iOS default).
+    @Test(arguments: [(ValleyLevel.caution, "caution"), (.danger, "danger"), (.evacuate, "evacuate")])
+    func eachLevelHasItsSound(level: ValleyLevel, file: String) {
+        #expect(AlarmSound.fileName(for: level) == file)
+        #expect(Bundle.main.url(forResource: file, withExtension: "caf") != nil)
+    }
+
+    @Test(arguments: [ValleyLevel.safe, .unknown])
+    func safeAndUnknownHaveNoSound(level: ValleyLevel) {
+        #expect(AlarmSound.fileName(for: level) == nil)
     }
 
     @Test func alarmWhileOpenOnlyGoesToNotificationCenter() {
