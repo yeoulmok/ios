@@ -17,11 +17,14 @@ actor MockValleyRepository: ValleyRepository {
     /// When true, each list or detail request works the first time and fails like a
     /// lost connection after that. Lets tests show the offline banner (#16).
     private let failsRepeatedLoads: Bool
+    /// When true, every question fails with the server's `TOO_MANY_QUESTIONS` (#64).
+    private let failsQuestions: Bool
     /// Requests already answered, e.g. "subscribed", "detail-1".
     private var answeredLoads: Set<String> = []
 
     init(bundle: Bundle = .main, failsSubscriptionChanges: Bool = false, failsFirstLoad: Bool = false,
-         failsRepeatedLoads: Bool = false) throws {
+         failsRepeatedLoads: Bool = false, failsQuestions: Bool = false) throws {
+        self.failsQuestions = failsQuestions
         self.failsSubscriptionChanges = failsSubscriptionChanges
         self.failsNextLoad = failsFirstLoad
         self.failsRepeatedLoads = failsRepeatedLoads
@@ -68,6 +71,22 @@ actor MockValleyRepository: ValleyRepository {
         try failIfAsked()
         try requireValley(valleyID)
         subscriptionOrder.removeAll { $0 == valleyID }
+    }
+
+    /// A fixed answer built from the mock detail, like the server's fallback wording.
+    func ask(valleyID: Int, question: String) async throws -> AskAnswer {
+        if failsQuestions { throw APIError.tooManyQuestions }
+        let trimmed = question.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard (1...200).contains(trimmed.count) else { throw APIError.questionInvalid }
+        guard let detail = details[valleyID] else { throw APIError.valleyNotFound }
+        // A short wait, so the loading state is visible as with the real server.
+        try await Task.sleep(for: .milliseconds(600))
+        return AskAnswer(
+            updatedAt: detail.updatedAt, valleyID: valleyID, question: trimmed,
+            answer: "지금 \(detail.name)은 '\(detail.level.title)' 단계예요. \(detail.summary). 현장 통제와 공식 안내를 먼저 따라 주세요.",
+            isAIFallback: false, level: detail.level,
+            observedAt: detail.observations.compactMap(\.observedAt).max(),
+            disclaimer: detail.disclaimer, source: detail.source)
     }
 
     private func failLoadIfAsked(key: String) throws {

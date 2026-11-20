@@ -42,9 +42,13 @@ nonisolated struct ServerValleyRepository: ValleyRepository {
 
     /// - Parameter needsDevice: `false` when the server answers without `X-Device-Id`
     ///   (then `subscribed` is always `false`).
+    func ask(valleyID: Int, question: String) async throws -> AskAnswer {
+        try await send(.post, "valleys/\(valleyID)/ask", body: AskRequest(question: question))
+    }
+
     private func send<Response: Decodable>(
         _ method: APIClient.Method, _ path: String, query: [URLQueryItem] = [],
-        needsDevice: Bool = true
+        body: (any Encodable & Sendable)? = nil, needsDevice: Bool = true
     ) async throws -> Response {
         let deviceID: String
         do {
@@ -52,15 +56,15 @@ nonisolated struct ServerValleyRepository: ValleyRepository {
         } catch where !needsDevice {
             // Registration failed (it is tried again on the next request): show the
             // valleys anyway, just without this device's subscriptions.
-            return try await client.send(method, path, query: query)
+            return try await client.send(method, path, query: query, body: body)
         }
         do {
-            return try await client.send(method, path, query: query,
+            return try await client.send(method, path, query: query, body: body,
                                          headers: [DeviceRegistrar.deviceIDHeader: deviceID])
         } catch let error as APIError where error.isDeviceNotFound {
             await registrar.invalidate(deviceID)
             let newID = try await registrar.deviceID()
-            return try await client.send(method, path, query: query,
+            return try await client.send(method, path, query: query, body: body,
                                          headers: [DeviceRegistrar.deviceIDHeader: newID])
         }
     }
