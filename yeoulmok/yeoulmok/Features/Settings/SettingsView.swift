@@ -49,6 +49,11 @@ struct SettingsView: View {
                 DataSourceView()
             }
             .accessibilityIdentifier("settings.\(row.id)")
+        case .contact:
+            NavigationLink(row.title) {
+                ContactView(info: info)
+            }
+            .accessibilityIdentifier("settings.\(row.id)")
         case let .open(url):
             Button {
                 if let url { openURL(url) }

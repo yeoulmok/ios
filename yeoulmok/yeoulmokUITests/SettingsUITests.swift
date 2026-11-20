@@ -45,6 +45,22 @@ final class SettingsUITests: XCTestCase {
         XCTAssertTrue(app.navigationBars["설정"].waitForExistence(timeout: 3))
     }
 
+    /// #92: 문의하기 opens a screen with the app's email and the two agencies.
+    @MainActor
+    func testContactListsAppEmailAndAgencies() {
+        app.buttons["settings.contact"].tap()
+
+        XCTAssertTrue(app.navigationBars["문의하기"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.buttons["contact.email"].exists)
+        XCTAssertTrue(app.buttons["contact.kma.web"].exists)
+        XCTAssertTrue(app.buttons["contact.kma.phone"].exists)
+        XCTAssertTrue(app.buttons["contact.hrfco.web"].exists)
+        XCTAssertTrue(element(containing: "한강홍수통제소").exists)
+
+        app.navigationBars.buttons.firstMatch.tap()
+        XCTAssertTrue(app.navigationBars["설정"].waitForExistence(timeout: 3))
+    }
+
     @MainActor
     func testBackGoesToHome() {
         app.navigationBars.buttons.firstMatch.tap()
