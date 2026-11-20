@@ -29,6 +29,12 @@ final class ValleyDetailViewModel {
     /// Set when the last request failed and an older detail is shown (APP-COM-07):
     /// its `updated_at`, for "○월 ○일 ○○:○○ 기준". `nil` when the detail is fresh.
     private(set) var offlineAsOf: Date?
+    /// The last 3 hours for the "최근 3시간" card (APP-DTL-09, #90). `nil` hides the card:
+    /// the history is extra, so failing to get it never turns into an error screen.
+    private(set) var history: ValleyHistory?
+
+    /// How far back the card looks.
+    static let historyHours = 3
 
     private let repository: any ValleyRepository
     private let cache: ValleyCache?
@@ -45,6 +51,17 @@ final class ValleyDetailViewModel {
     /// - otherwise `.failed`. A server error code (e.g. `VALLEY_NOT_FOUND`) never falls
     ///   back to a saved copy: the server said this valley is gone.
     func load() async {
+        async let history = loadHistory()
+        await loadDetail()
+        if let fresh = await history { self.history = fresh }
+    }
+
+    /// The history, or `nil` when it fails (an older one, if shown, is kept by `load`).
+    private func loadHistory() async -> ValleyHistory? {
+        try? await repository.history(valleyID: valleyID, hours: Self.historyHours)
+    }
+
+    private func loadDetail() async {
         do {
             let detail = try await repository.valleyDetail(id: valleyID)
             state = .loaded(detail)

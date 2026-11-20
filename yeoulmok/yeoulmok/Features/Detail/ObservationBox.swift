@@ -7,6 +7,8 @@ struct ObservationSection: View {
     static let emptyMessage = "연결된 관측소가 없어요"
 
     let observations: [ValleyObservation]
+    /// Rain over 24 hours (API spec v0.6), added under the 1-hour rain card. `nil`: no line.
+    var rainLast24hMM: Double?
 
     var body: some View {
         if observations.isEmpty {
@@ -18,7 +20,8 @@ struct ObservationSection: View {
         } else {
             VStack(spacing: 8) {
                 ForEach(Array(observations.enumerated()), id: \.offset) { index, observation in
-                    ObservationBox(observation: observation)
+                    ObservationBox(observation: observation,
+                                   rainLast24hMM: observation.kind == .rainLastHour ? rainLast24hMM : nil)
                         .accessibilityIdentifier("detail.observation.\(index)")
                 }
             }
@@ -40,6 +43,11 @@ struct ObservationBox: View {
     static let estimatedTag = "AI 추정"
 
     let observation: ValleyObservation
+    /// Shown as "24시간 강수 31.0mm" under the gauge (#90). `nil`: no line.
+    var rainLast24hMM: Double?
+
+    /// "24시간 강수 31.0mm". Temporary wording until QA.
+    static func rain24hText(_ mm: Double) -> String { "24시간 강수 \(ValleyFormat.rainfall(mm))" }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -56,7 +64,13 @@ struct ObservationBox: View {
                 thresholdText: ObservationFormat.shortThreshold(observation),
                 value: observation.value,
                 threshold: observation.threshold,
-                change: observation.kind == .rainLastHour ? nil : observation.value)
+                change: observation.kind == .rainLastHour ? nil : observation.value,
+                stages: observation.thresholds?.steps ?? [])
+            if let rainLast24hMM {
+                Text(Self.rain24hText(rainLast24hMM))
+                    .font(.footnote)
+                    .foregroundStyle(Theme.Text.body)
+            }
             Text(ObservationFormat.footnote(observation))
                 .font(.caption)
                 .foregroundStyle(Theme.Text.label)
@@ -74,6 +88,8 @@ struct ObservationBox: View {
         // VoiceOver reads the card as one sentence, the same as the old table.
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(ObservationFormat.accessibilityLabel(observation))
+        // Read after the sentence above; the sentence itself stays as before (#11).
+        .accessibilityValue(rainLast24hMM.map(Self.rain24hText) ?? "")
     }
 }
 

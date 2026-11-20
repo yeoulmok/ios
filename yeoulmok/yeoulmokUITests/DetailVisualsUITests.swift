@@ -24,6 +24,17 @@ final class DetailVisualsUITests: XCTestCase {
         XCTAssertFalse(app.descendants(matching: .any)["detail.estimated"].exists)
     }
 
+    /// APP-DTL-09 (#90): the "최근 3시간" card with rain and water, and level marks.
+    @MainActor
+    func testDangerShowsHistoryCardAndLevelMarks() {
+        openDetail(4)
+        let history = app.descendants(matching: .any)["detail.history"]
+        XCTAssertTrue(history.waitForExistence(timeout: 3))
+        XCTAssertEqual(history.label, "최근 3시간, 강수 1시간 0.0mm에서 32.5mm, 수위 0.21m에서 0.61m")
+        let rain = app.descendants(matching: .any)["detail.observation.0"]
+        XCTAssertEqual(rain.value as? String, "24시간 강수 58.5mm")
+    }
+
     /// 갑천 계곡 (판정 불가, no water gauge): AI estimate card, no AI explanation.
     @MainActor
     func testUnknownWithAIEstimate() {
