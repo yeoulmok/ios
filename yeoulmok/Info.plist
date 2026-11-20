@@ -4,13 +4,15 @@
 <dict>
 	<key>APIBaseURL</key>
 	<string>$(API_BASE_URL)</string>
-	<key>TermsURL</key>
-	<string>$(TERMS_URL)</string>
-	<key>PrivacyURL</key>
-	<string>$(PRIVACY_URL)</string>
 	<key>ContactEmail</key>
 	<string>$(CONTACT_EMAIL)</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>내 주변 계곡을 보여 드리는 데 사용해요. 위치는 휴대폰 안에서만 사용되고 서버로 보내지 않아요.</string>
+	<key>PrivacyURL</key>
+	<string>$(PRIVACY_URL)</string>
+	<key>TermsURL</key>
+	<string>$(TERMS_URL)</string>
+	<key>UIUserInterfaceStyle</key>
+	<string>Dark</string>
 </dict>
 </plist>
