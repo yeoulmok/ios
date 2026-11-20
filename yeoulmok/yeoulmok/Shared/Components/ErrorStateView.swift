@@ -39,19 +39,20 @@ struct ErrorStateView: View {
         VStack(spacing: 8) {
             Image(systemName: content.isConnection ? "wifi.exclamationmark" : "exclamationmark.circle")
                 .font(.title2)
-                .foregroundStyle(.secondary)
-                .frame(width: 56, height: 56)
-                .background(Color(.systemGray6), in: Circle())
+                .foregroundStyle(Theme.Text.primary)
+                .frame(width: 64, height: 64)
+                .glassCard(cornerRadius: Theme.Radius.large)
                 .accessibilityHidden(true)
             Text(content.title)
-                .font(.headline)
+                .font(.title3.weight(.bold))
+                .foregroundStyle(Theme.Text.primary)
                 .multilineTextAlignment(.center)
-                .padding(.top, 8)
+                .padding(.top, 12)
                 .accessibilityIdentifier("error.title")
             if let detail = content.detail {
                 Text(detail)
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Theme.Text.body)
                     .multilineTextAlignment(.center)
             }
             Button {
@@ -66,14 +67,10 @@ struct ErrorStateView: View {
                         .opacity(isRetrying ? 0 : 1)
                     if isRetrying {
                         ProgressView()
-                            .tint(Color(.systemBackground))
+                            .tint(Color(hex: 0x101828))
                     }
                 }
-                .font(.body.weight(.semibold))
-                .foregroundStyle(Color(.systemBackground))
-                .frame(maxWidth: .infinity, minHeight: 50)
-                // Same look as "계곡 추가하기" (Figma: black button, white in dark mode).
-                .background(Color.primary, in: RoundedRectangle(cornerRadius: 12))
+                .primaryButtonLabel()
             }
             .buttonStyle(.plain)
             // One request at a time: a second tap while retrying does nothing.

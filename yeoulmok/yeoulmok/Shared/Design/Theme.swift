@@ -90,3 +90,36 @@ extension View {
         modifier(ListRowSurface(cornerRadius: cornerRadius))
     }
 }
+
+/// Main action: solid white with dark text, the one thing to press (#72).
+private struct PrimaryButtonLabel: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .font(.body.weight(.bold))
+            .foregroundStyle(Color(hex: 0x101828))
+            .frame(maxWidth: .infinity, minHeight: 54)
+            .background(Color.white, in: RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous))
+            .shadow(color: .black.opacity(0.35), radius: 12, y: 10)
+            .contentShape(RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous))
+    }
+}
+
+/// Second action next to a primary one: glass with light text (#72).
+private struct SecondaryButtonLabel: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .font(.body)
+            .foregroundStyle(Color.white.opacity(0.85))
+            .frame(maxWidth: .infinity, minHeight: 50)
+            .glassCard()
+            .contentShape(RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous))
+    }
+}
+
+extension View {
+    /// Label look for the screen's main button (use with `.buttonStyle(.plain)`).
+    func primaryButtonLabel() -> some View { modifier(PrimaryButtonLabel()) }
+
+    /// Label look for a second, quieter button (use with `.buttonStyle(.plain)`).
+    func secondaryButtonLabel() -> some View { modifier(SecondaryButtonLabel()) }
+}

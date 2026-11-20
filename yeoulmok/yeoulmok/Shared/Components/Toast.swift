@@ -10,13 +10,13 @@ struct Toast: View {
 
     var body: some View {
         Text(message)
-            .font(.subheadline)
-            .foregroundStyle(Color(.systemBackground))
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(Theme.Text.primary)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            // Dark box in light mode, light box in dark mode, so it always stands out.
-            .background(Color(.label).opacity(0.9), in: RoundedRectangle(cornerRadius: 12))
+            .padding(.vertical, 14)
+            // Glass like every card (#72); stands out over the dark screens.
+            .glassCard(cornerRadius: Theme.Radius.row)
             .accessibilityIdentifier("toast")
     }
 }

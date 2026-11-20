@@ -16,6 +16,8 @@ struct NearbyView: View {
 
     var body: some View {
         content
+            // No photo here: the map is the picture (#72).
+            .background { PhotoBackdrop(style: isFailed ? .offline : .plain) }
             .navigationTitle("근처 계곡")
             .onAppear { viewModel.onAppear() }
             // Each time the tab appears (a fresh location), and right after "허용".
@@ -60,7 +62,7 @@ struct NearbyView: View {
             .padding()
         case let .loaded(valleys, source):
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: 12) {
+                LazyVStack(alignment: .leading, spacing: 8) {
                     offlineBanner
                     // #58: the same valleys on a map, above the list.
                     if let user = viewModel.userLocation {
@@ -87,7 +89,7 @@ struct NearbyView: View {
                     header
                     Spacer()
                     Text(Self.emptyText)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Theme.Text.body)
                         .frame(maxWidth: .infinity)
                     Spacer()
                     SourceFooter(source: source)
@@ -106,9 +108,14 @@ struct NearbyView: View {
     }
 
     /// Figma 03: "내 위치 기준" above the list.
+    private var isFailed: Bool {
+        if case .allowed = viewModel.state, case .failed = viewModel.list { true } else { false }
+    }
+
     private var header: some View {
         Text("내 위치 기준")
-            .font(.headline)
+            .font(.title3.weight(.bold))
+            .foregroundStyle(Theme.Text.primary)
             .accessibilityIdentifier("nearby.allowed")
     }
 
@@ -131,40 +138,66 @@ struct NearbyView: View {
     }
 }
 
-/// One valley on the nearby list (Figma 03).
+/// One valley on the nearby list (Figma 03; design #72), the same row look as home.
 ///
-///     금대리 계곡                 [주의]
-///     11.3km  🕘 자료 지연   (only when stale)
+///     [주의]  금대리 계곡
+///             11.3km  🕘 자료 지연   (only when stale)
 struct NearbyRow: View {
     let nearby: NearbyValley
     /// The map's card (#58) reuses this row with its own identifier.
     var identifier: String?
+    /// The map's card sits on the map, so it is glass instead of the faint row surface.
+    var onMap = false
 
     var body: some View {
-        HStack(alignment: .center) {
-            VStack(alignment: .leading, spacing: 4) {
+        HStack(spacing: 12) {
+            StatusBadge(level: nearby.valley.level)
+            VStack(alignment: .leading, spacing: 2) {
                 Text(nearby.valley.name)
                     .font(.headline)
+                    .foregroundStyle(Theme.Text.primary)
                 HStack(spacing: 8) {
                     Text(NearbyValleys.distanceText(meters: nearby.distanceMeters))
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.Text.body)
                     // Same rule as home (#9): the judgment uses late data.
                     if nearby.valley.isStale {
                         StaleLabel()
                     }
                 }
             }
-            Spacer()
-            StatusBadge(level: nearby.valley.level)
+            Spacer(minLength: 0)
+            Image(systemName: "chevron.right")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(Theme.Text.source)
         }
-        .padding(16)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 12))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(.separator)))
-        // VoiceOver reads the whole row at once: "금대리 계곡, 11.3km, 주의".
-        .accessibilityElement(children: .combine)
+        .modifier(RowSurface(onMap: onMap))
+        // VoiceOver reads the whole row at once, name first: "금대리 계곡, 11.3km, 주의".
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityText)
         .accessibilityIdentifier(identifier ?? "nearby.row.\(nearby.id)")
+    }
+
+    private var accessibilityText: String {
+        var parts = [nearby.valley.name, NearbyValleys.distanceText(meters: nearby.distanceMeters),
+                     nearby.valley.level.title]
+        if nearby.valley.isStale { parts.append(StaleLabel.text) }
+        return parts.joined(separator: ", ")
+    }
+}
+
+private struct RowSurface: ViewModifier {
+    let onMap: Bool
+
+    func body(content: Content) -> some View {
+        if onMap {
+            content.glassCard(cornerRadius: Theme.Radius.row)
+        } else {
+            content.listRowSurface()
+        }
     }
 }
 
@@ -182,16 +215,17 @@ struct LocationDeniedView: View {
             Spacer()
             Image(systemName: "location.slash")
                 .font(.title2)
-                .foregroundStyle(.secondary)
-                .frame(width: 56, height: 56)
-                .background(Color(.systemGray6), in: Circle())
+                .foregroundStyle(Theme.Text.primary)
+                .frame(width: 64, height: 64)
+                .glassCard(cornerRadius: Theme.Radius.large)
                 .accessibilityHidden(true)
             Text(Self.title)
-                .font(.headline)
-                .padding(.top, 8)
+                .font(.title3.weight(.bold))
+                .foregroundStyle(Theme.Text.primary)
+                .padding(.top, 12)
             Text(Self.message)
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.Text.body)
                 .multilineTextAlignment(.center)
             Button {
                 if let url = URL(string: UIApplication.openSettingsURLString) {
@@ -199,11 +233,7 @@ struct LocationDeniedView: View {
                 }
             } label: {
                 Text(Self.buttonTitle)
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(Color(.systemBackground))
-                    .frame(maxWidth: .infinity, minHeight: 50)
-                    // Same look as "계곡 추가하기" (Figma: black button, white in dark mode).
-                    .background(Color.primary, in: RoundedRectangle(cornerRadius: 12))
+                    .primaryButtonLabel()
             }
             .buttonStyle(.plain)
             .padding(.top, 16)
@@ -222,6 +252,6 @@ struct LocationDeniedView: View {
 
 #Preview("거부") {
     NavigationStack {
-        LocationDeniedView().padding()
+        LocationDeniedView().padding().background(Theme.night)
     }
 }

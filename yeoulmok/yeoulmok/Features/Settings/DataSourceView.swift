@@ -15,11 +15,14 @@ struct DataSourceView: View {
                 ForEach(Self.sources, id: \.data) { source in
                     LabeledContent(source.data, value: source.provider)
                 }
+                .listRowBackground(Color.white.opacity(0.06))
             } footer: {
                 Text(DisclaimerText.fallback)
                     .padding(.top, 4)
             }
         }
+        .scrollContentBackground(.hidden)
+        .background { PhotoBackdrop(style: .plain) }
         .navigationTitle("데이터 출처")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
