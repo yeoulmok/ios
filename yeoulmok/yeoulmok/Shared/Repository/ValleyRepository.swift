@@ -23,4 +23,8 @@ nonisolated protocol ValleyRepository: Sendable {
 
     /// "AI에게 물어보기" (APP-DTL-08): sends the question only, returns the server's answer.
     func ask(valleyID: Int, question: String) async throws -> AskAnswer
+
+    /// `GET /valleys/{id}/history?hours=` (APP-DTL-09): one row every 10 minutes, for the
+    /// detail's "최근 3시간" card.
+    func history(valleyID: Int, hours: Int) async throws -> ValleyHistory
 }

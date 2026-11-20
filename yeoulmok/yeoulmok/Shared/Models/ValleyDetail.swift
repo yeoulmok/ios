@@ -28,6 +28,9 @@ nonisolated struct ValleyDetail: Codable, Identifiable, Equatable {
     /// `true` when the level was judged from an AI estimate (no water gauge, or its
     /// data is missing). API spec v0.4; older answers and saved copies lack it: `false`.
     var isEstimated: Bool = false
+    /// Rain over the last 24 hours (API spec v0.6). `nil` when unknown or the server
+    /// is older.
+    var rainLast24hMM: Double?
 
     enum CodingKeys: String, CodingKey {
         case updatedAt = "updated_at"
@@ -38,6 +41,7 @@ nonisolated struct ValleyDetail: Codable, Identifiable, Equatable {
         case isSubscribed = "subscribed"
         case isStale = "stale"
         case isEstimated = "estimated"
+        case rainLast24hMM = "rain_24h_mm"
     }
 }
 
@@ -60,6 +64,7 @@ extension ValleyDetail {
         isSubscribed = try c.decode(Bool.self, forKey: .isSubscribed)
         isStale = try c.decode(Bool.self, forKey: .isStale)
         isEstimated = try c.decodeIfPresent(Bool.self, forKey: .isEstimated) ?? false
+        rainLast24hMM = try c.decodeIfPresent(Double.self, forKey: .rainLast24hMM)
     }
 }
 
@@ -81,6 +86,9 @@ nonisolated struct ValleyObservation: Codable, Equatable {
     /// `true` for a value estimated by AI from rainfall (`est_rise_3h`), not measured.
     /// Missing in older answers: `false`.
     var isEstimated: Bool = false
+    /// The limit for each level (API spec v0.6), drawn as marks on the gauge. `nil`
+    /// when the server is older; `threshold` stays the main limit either way.
+    var thresholds: LevelThresholds?
 
     enum CodingKeys: String, CodingKey {
         case kind = "type"
@@ -88,6 +96,7 @@ nonisolated struct ValleyObservation: Codable, Equatable {
         case observedAt = "observed_at"
         case value, unit, threshold, note
         case isEstimated = "estimated"
+        case thresholds
     }
 }
 
@@ -103,6 +112,7 @@ extension ValleyObservation {
         threshold = try c.decodeIfPresent(Double.self, forKey: .threshold)
         note = try c.decodeIfPresent(String.self, forKey: .note)
         isEstimated = try c.decodeIfPresent(Bool.self, forKey: .isEstimated) ?? false
+        thresholds = try c.decodeIfPresent(LevelThresholds.self, forKey: .thresholds)
     }
 }
 

@@ -130,4 +130,5 @@ private struct FailingRepository: ValleyRepository {
     func subscribe(valleyID: Int) async throws { throw error }
     func unsubscribe(valleyID: Int) async throws { throw error }
     func ask(valleyID: Int, question: String) async throws -> AskAnswer { throw error }
+    func history(valleyID: Int, hours: Int) async throws -> ValleyHistory { throw error }
 }

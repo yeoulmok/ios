@@ -12,6 +12,8 @@ struct StubRepository: ValleyRepository {
     var detail: @Sendable (Int) async throws -> ValleyDetail
     /// `ask(valleyID:question:)` (#64).
     var ask: @Sendable (Int, String) async throws -> AskAnswer
+    /// `history(valleyID:hours:)` (#90).
+    var history: @Sendable (Int, Int) async throws -> ValleyHistory
 
     init(
         list: @escaping @Sendable (String?) async throws -> ValleyListResponse = { query in
@@ -23,8 +25,12 @@ struct StubRepository: ValleyRepository {
         },
         ask: @escaping @Sendable (Int, String) async throws -> AskAnswer = { id, question in
             try await MockValleyRepository().ask(valleyID: id, question: question)
+        },
+        history: @escaping @Sendable (Int, Int) async throws -> ValleyHistory = { id, hours in
+            try await MockValleyRepository().history(valleyID: id, hours: hours)
         }
     ) {
+        self.history = history
         self.ask = ask
         self.list = list
         self.changeSubscription = changeSubscription
@@ -37,4 +43,5 @@ struct StubRepository: ValleyRepository {
     func subscribe(valleyID: Int) async throws { try await changeSubscription(valleyID, true) }
     func unsubscribe(valleyID: Int) async throws { try await changeSubscription(valleyID, false) }
     func ask(valleyID: Int, question: String) async throws -> AskAnswer { try await ask(valleyID, question) }
+    func history(valleyID: Int, hours: Int) async throws -> ValleyHistory { try await history(valleyID, hours) }
 }
