@@ -21,7 +21,7 @@ struct SettingsView: View {
             } footer: {
                 VStack(alignment: .leading, spacing: 2) {
                     SourceFooter(source: nil)
-                    // The background photo's credit (#72).
+                    // The background photo's credit (#72): photographer and Unsplash, as Unsplash asks (#92).
                     Text(Self.photoCredit)
                         .font(.caption)
                         .foregroundStyle(Theme.Text.source)
@@ -38,7 +38,7 @@ struct SettingsView: View {
         .toolbar(.hidden, for: .tabBar)
     }
 
-    static let photoCredit = "배경 사진: Unsplash"
+    static let photoCredit = "배경 사진: May Cloud, Unsplash"
     private static let rowBackground = Color.white.opacity(0.06)
 
     @ViewBuilder
