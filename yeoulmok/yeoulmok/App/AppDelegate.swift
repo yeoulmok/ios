@@ -41,9 +41,10 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         let userInfo = notification.request.content.userInfo
         // #60: a 위험 · 대피 push while the app is open shows the full-screen alarm with
         // its sound right away; iOS only files it in Notification Center.
-        if PushPayload.isAlarm(userInfo), let valleyID = PushPayload.valleyID(from: userInfo) {
+        if PushPayload.isAlarm(userInfo), let valleyID = PushPayload.valleyID(from: userInfo),
+           let level = PushPayload.level(from: userInfo) {
             Task { @MainActor in
-                pushRouter.raiseAlarm(valleyID: valleyID, playsSound: true)
+                pushRouter.raiseAlarm(valleyID: valleyID, level: level, playsSound: true)
             }
             completionHandler(PushPresentation.alarmWhileOpen)
             return
@@ -60,12 +61,13 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         // Only a tap on the notification itself (not, e.g., swiping it away).
         if response.actionIdentifier == UNNotificationDefaultActionIdentifier,
            let valleyID = PushPayload.valleyID(from: response.notification.request.content.userInfo) {
-            let isAlarm = PushPayload.isAlarm(response.notification.request.content.userInfo)
+            let userInfo = response.notification.request.content.userInfo
+            let level = PushPayload.level(from: userInfo)
             // The router lives on the main actor; RootView opens the detail (or, for
             // 위험 · 대피, the full-screen alarm first, #60) when it changes.
             Task { @MainActor in
-                if isAlarm {
-                    pushRouter.raiseAlarm(valleyID: valleyID, playsSound: false)
+                if let level, level.isUrgent {
+                    pushRouter.raiseAlarm(valleyID: valleyID, level: level, playsSound: false)
                 } else {
                     pushRouter.open(valleyID: valleyID)
                 }

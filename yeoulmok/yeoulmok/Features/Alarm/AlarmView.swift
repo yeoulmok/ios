@@ -49,7 +49,7 @@ struct AlarmView: View {
             .safeAreaInset(edge: .bottom) { confirmButton }
         }
         .task {
-            if alarm.playsSound { sound.start() }
+            if alarm.playsSound { sound.start(level: alarm.level) }
             await viewModel.load()
         }
         .onDisappear { sound.stop() }

@@ -25,7 +25,7 @@ struct YeoulmokApp: App {
                     appDelegate.pushRouter.open(valleyID: valleyID)
                 }
                 if let valleyID = Self.mockOption("-mockAlarmValleyID") {
-                    appDelegate.pushRouter.raiseAlarm(valleyID: valleyID, playsSound: false)
+                    appDelegate.pushRouter.raiseAlarm(valleyID: valleyID, level: .danger, playsSound: false)
                 }
                 await connectPushTokens()
             }
