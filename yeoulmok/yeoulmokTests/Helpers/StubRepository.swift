@@ -10,6 +10,8 @@ struct StubRepository: ValleyRepository {
     var changeSubscription: @Sendable (Int, Bool) async throws -> Void
     /// `valleyDetail(id:)`.
     var detail: @Sendable (Int) async throws -> ValleyDetail
+    /// `ask(valleyID:question:)` (#64).
+    var ask: @Sendable (Int, String) async throws -> AskAnswer
 
     init(
         list: @escaping @Sendable (String?) async throws -> ValleyListResponse = { query in
@@ -18,8 +20,12 @@ struct StubRepository: ValleyRepository {
         changeSubscription: @escaping @Sendable (Int, Bool) async throws -> Void = { _, _ in },
         detail: @escaping @Sendable (Int) async throws -> ValleyDetail = { id in
             try await MockValleyRepository().valleyDetail(id: id)
+        },
+        ask: @escaping @Sendable (Int, String) async throws -> AskAnswer = { id, question in
+            try await MockValleyRepository().ask(valleyID: id, question: question)
         }
     ) {
+        self.ask = ask
         self.list = list
         self.changeSubscription = changeSubscription
         self.detail = detail
@@ -30,4 +36,5 @@ struct StubRepository: ValleyRepository {
     func valleyDetail(id: Int) async throws -> ValleyDetail { try await detail(id) }
     func subscribe(valleyID: Int) async throws { try await changeSubscription(valleyID, true) }
     func unsubscribe(valleyID: Int) async throws { try await changeSubscription(valleyID, false) }
+    func ask(valleyID: Int, question: String) async throws -> AskAnswer { try await ask(valleyID, question) }
 }

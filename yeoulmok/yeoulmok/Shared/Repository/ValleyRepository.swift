@@ -20,4 +20,7 @@ nonisolated protocol ValleyRepository: Sendable {
 
     /// `DELETE /me/subscriptions/{id}`. Unsubscribing twice is not an error.
     func unsubscribe(valleyID: Int) async throws
+
+    /// "AI에게 물어보기" (APP-DTL-08): sends the question only, returns the server's answer.
+    func ask(valleyID: Int, question: String) async throws -> AskAnswer
 }

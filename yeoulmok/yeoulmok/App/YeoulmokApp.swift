@@ -114,7 +114,8 @@ struct YeoulmokApp: App {
         do {
             return try MockValleyRepository(failsSubscriptionChanges: launchedWith("-mockSubscriptionFails"),
                                             failsFirstLoad: launchedWith("-mockLoadFailsOnce"),
-                                            failsRepeatedLoads: launchedWith("-mockOfflineAfterFirstLoad"))
+                                            failsRepeatedLoads: launchedWith("-mockOfflineAfterFirstLoad"),
+                                            failsQuestions: launchedWith("-mockAskFails"))
         } catch {
             // The mock JSON ships inside the app, so this only fails if the build is broken.
             fatalError("Mock data is missing from the app bundle: \(error)")

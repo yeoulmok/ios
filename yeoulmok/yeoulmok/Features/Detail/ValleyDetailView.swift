@@ -6,9 +6,12 @@ import SwiftUI
 /// and the data source at the bottom.
 struct ValleyDetailView: View {
     @State private var viewModel: ValleyDetailViewModel
+    /// "AI에게 물어보기" (#64). Kept while the detail reloads.
+    @State private var askModel: AskViewModel
 
     init(valleyID: Int, repository: any ValleyRepository, cache: ValleyCache? = nil) {
         _viewModel = State(initialValue: ValleyDetailViewModel(valleyID: valleyID, repository: repository, cache: cache))
+        _askModel = State(initialValue: AskViewModel(valleyID: valleyID, repository: repository))
     }
 
     var body: some View {
@@ -93,6 +96,8 @@ struct ValleyDetailView: View {
                 }
                 ActionList(actions: detail.actions)
                     .padding(.top, 8)
+                AskSection(model: askModel)
+                    .padding(.top, 8)
                 DetailFooter(disclaimer: detail.disclaimer, source: detail.source)
                     .padding(.top, 12)
             }
@@ -100,6 +105,7 @@ struct ValleyDetailView: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 24)
         }
+        .scrollDismissesKeyboard(.interactively)
         // Keeps the detail while reloading; a failed refresh keeps it too (view model).
         .refreshable { await viewModel.load() }
     }
