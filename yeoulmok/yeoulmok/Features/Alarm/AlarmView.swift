@@ -34,7 +34,8 @@ struct AlarmView: View {
 
     var body: some View {
         ZStack {
-            background.ignoresSafeArea()
+            // Red tint, the darkest backdrop in the app (#72).
+            PhotoBackdrop(style: .alarm)
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     Label(Self.title, systemImage: "exclamationmark.triangle.fill")
@@ -62,41 +63,50 @@ struct AlarmView: View {
         case let .loaded(detail):
             Text(detail.name)
                 .font(.largeTitle.weight(.heavy))
-            // White badge: the level's own color would vanish on the same background.
-            Text(detail.level.title)
-                .font(.title3.weight(.heavy))
-                .foregroundStyle(detail.level.badgeBackground)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 6)
-                .background(.white, in: Capsule())
-            Text(detail.summary)
-                .font(.title2.weight(.bold))
-                .accessibilityIdentifier("alarm.summary")
-            if let water = detail.observations.first(where: { $0.kind == .waterRise30Min }) {
-                HStack(spacing: 6) {
-                    Text("수위 30분")
-                    if let direction = ChangeDirection(water.value) {
-                        Image(systemName: direction.symbol)
-                            .accessibilityLabel(direction.title)
-                    }
-                    Text(ObservationFormat.shortValue(water)).fontWeight(.bold)
-                    if let limit = ObservationFormat.shortThreshold(water) {
-                        Text("/ 기준 \(limit)").opacity(0.8)
-                    }
-                }
-                .font(.headline)
-                .padding(12)
-                .background(.white.opacity(0.15), in: RoundedRectangle(cornerRadius: 12))
+            HStack(alignment: .center, spacing: 10) {
+                StatusBadge(level: detail.level, size: .large)
+                Text(detail.summary)
+                    .font(.title2.weight(.bold))
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("alarm.summary")
             }
-            VStack(alignment: .leading, spacing: 8) {
-                ForEach(detail.actions, id: \.self) { action in
-                    Label(action, systemImage: "checkmark.circle.fill")
-                        .font(.title3.weight(.semibold))
+            let tiles = Self.tileObservations(in: detail)
+            if !tiles.isEmpty {
+                HStack(spacing: 10) {
+                    ForEach(Array(tiles.enumerated()), id: \.offset) { _, observation in
+                        MetricTile(
+                            title: ObservationFormat.title(observation),
+                            valueText: ObservationFormat.shortValue(observation),
+                            thresholdText: ObservationFormat.shortThreshold(observation),
+                            value: observation.value,
+                            threshold: observation.threshold)
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel(ObservationFormat.accessibilityLabel(observation))
+                    }
                 }
+            }
+            if !detail.actions.isEmpty {
+                // The server's actions, as they are and in order, numbered.
+                VStack(alignment: .leading, spacing: 10) {
+                    ForEach(Array(detail.actions.enumerated()), id: \.offset) { index, action in
+                        HStack(alignment: .firstTextBaseline, spacing: 12) {
+                            Text("\(index + 1)")
+                                .font(.headline.weight(.heavy))
+                                .foregroundStyle(Theme.Text.label)
+                                .accessibilityHidden(true)
+                            Text(action)
+                                .font(.title3.weight(.semibold))
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(16)
+                .glassCard()
             }
             Text(detail.disclaimer)
                 .font(.footnote)
-                .opacity(0.85)
+                .foregroundStyle(Theme.Text.body)
         case let .failed(message):
             // The alarm still says what kind of push this was, even without details.
             Text(message).font(.headline)
@@ -110,20 +120,18 @@ struct AlarmView: View {
         } label: {
             Text(Self.confirmTitle)
                 .font(.title3.weight(.bold))
-                .foregroundStyle(background)
-                .frame(maxWidth: .infinity, minHeight: 56)
-                .background(.white, in: RoundedRectangle(cornerRadius: 16))
+                .primaryButtonLabel()
         }
+        .buttonStyle(.plain)
         .padding(.horizontal, 24)
         .padding(.bottom, 8)
         .accessibilityIdentifier("alarm.confirm")
     }
 
-    /// The level's color; 대피 until the detail is loaded (alarms are 위험 · 대피 only).
-    private var background: Color {
-        if case let .loaded(detail) = viewModel.state, detail.level.isUrgent {
-            return detail.level.badgeBackground
+    /// 수위 then 강수, the two numbers that matter in a flood (#72).
+    private static func tileObservations(in detail: ValleyDetail) -> [ValleyObservation] {
+        [ObservationKind.waterRise30Min, .rainLastHour].compactMap { kind in
+            detail.observations.first { $0.kind == kind }
         }
-        return ValleyLevel.evacuate.badgeBackground
     }
 }
