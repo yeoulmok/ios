@@ -22,37 +22,31 @@ struct NotificationOnboardingView: View {
                 .frame(maxHeight: 72)
             Image(systemName: "bell")
                 .font(.title2)
-                .foregroundStyle(.secondary)
-                .frame(width: 56, height: 56)
-                .background(Color(.systemGray6), in: Circle())
+                .foregroundStyle(Theme.Text.primary)
+                .frame(width: 64, height: 64)
+                .glassCard(cornerRadius: Theme.Radius.large)
                 .accessibilityHidden(true)
             Text(Self.title)
-                .font(.title2.weight(.bold))
+                .font(.title.weight(.bold))
+                .foregroundStyle(Theme.Text.primary)
                 .padding(.top, 16)
                 .accessibilityAddTraits(.isHeader)
                 .accessibilityIdentifier("onboarding.notification.title")
             Text(Self.message)
                 .font(.body)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.Text.body)
             Spacer()
             VStack(spacing: 12) {
                 Button {
                     Task { await viewModel.allow() }
                 } label: {
                     Text(Self.allowTitle)
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(Color(.systemBackground))
-                        .frame(maxWidth: .infinity, minHeight: 50)
-                        // Figma 05b: black button; flips to white in dark mode.
-                        .background(Color.primary, in: RoundedRectangle(cornerRadius: 12))
+                        .primaryButtonLabel()
                 }
                 .accessibilityIdentifier("onboarding.notification.allow")
                 Button(action: viewModel.later) {
                     Text(Self.laterTitle)
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(.primary)
-                        .frame(maxWidth: .infinity, minHeight: 50)
-                        .background(Color(.systemGray6), in: RoundedRectangle(cornerRadius: 12))
+                        .secondaryButtonLabel()
                 }
                 .accessibilityIdentifier("onboarding.notification.later")
             }
@@ -60,8 +54,11 @@ struct NotificationOnboardingView: View {
             // While iOS's question is up, a second tap does nothing anyway; make it visible.
             .disabled(viewModel.isRequesting)
         }
-        .padding()
+        .padding(.horizontal, 24)
+        .padding(.bottom, 24)
         .frame(maxWidth: .infinity, alignment: .leading)
+        // A guide screen: no photo, so it does not repeat the main screens (#72).
+        .background { PhotoBackdrop(style: .plain) }
     }
 }
 
