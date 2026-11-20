@@ -123,3 +123,17 @@ extension View {
     /// Label look for a second, quieter button (use with `.buttonStyle(.plain)`).
     func secondaryButtonLabel() -> some View { modifier(SecondaryButtonLabel()) }
 }
+
+extension View {
+    /// Content scrolling under the top bar is blurred out, so it never shows through the
+    /// back · subscribe buttons (#78). iOS 26's default soft edge is too faint over the
+    /// dark photo; iOS 17–18 show the bar's own background when scrolled.
+    @ViewBuilder
+    func topBarScrollEdge() -> some View {
+        if #available(iOS 26.0, *) {
+            scrollEdgeEffectStyle(.hard, for: .top)
+        } else {
+            self
+        }
+    }
+}
