@@ -11,15 +11,18 @@ struct OfflineBanner: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(Self.text(asOf: asOf))
-                .font(.subheadline)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Theme.stale)
             Text(Self.hint)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.Text.body)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
-        .background(Color(.systemGray6), in: RoundedRectangle(cornerRadius: 10))
-        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color(.separator)))
+        // Amber, the same color as "자료 지연": old data (#72).
+        .background(Theme.stale.opacity(0.16), in: RoundedRectangle(cornerRadius: Theme.Radius.row, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: Theme.Radius.row, style: .continuous)
+            .strokeBorder(Theme.stale.opacity(0.35), lineWidth: 1))
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("offlineBanner")
     }

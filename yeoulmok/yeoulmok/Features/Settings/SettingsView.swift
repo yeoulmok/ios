@@ -14,18 +14,32 @@ struct SettingsView: View {
                     rowView(row)
                 }
             }
+            .listRowBackground(Self.rowBackground)
             Section {
                 LabeledContent("앱 버전", value: SettingsRows.versionText(for: info))
                     .accessibilityIdentifier("settings.version")
             } footer: {
-                SourceFooter(source: nil)
-                    .padding(.top, 4)
+                VStack(alignment: .leading, spacing: 2) {
+                    SourceFooter(source: nil)
+                    // The background photo's credit (#72).
+                    Text(Self.photoCredit)
+                        .font(.caption)
+                        .foregroundStyle(Theme.Text.source)
+                }
+                .padding(.top, 4)
             }
+            .listRowBackground(Self.rowBackground)
         }
+        // No photo on settings (#72): night background, faint grouped rows.
+        .scrollContentBackground(.hidden)
+        .background { PhotoBackdrop(style: .plain) }
         .navigationTitle("설정")
         // Figma 06 has no tab bar, like the alert detail.
         .toolbar(.hidden, for: .tabBar)
     }
+
+    static let photoCredit = "배경 사진: Unsplash"
+    private static let rowBackground = Color.white.opacity(0.06)
 
     @ViewBuilder
     private func rowView(_ row: SettingsRow) -> some View {
@@ -41,12 +55,12 @@ struct SettingsView: View {
             } label: {
                 HStack {
                     Text(row.title)
-                        .foregroundStyle(row.isEnabled ? Color.primary : Color.secondary)
+                        .foregroundStyle(row.isEnabled ? Theme.Text.primary : Theme.Text.source)
                     Spacer()
                     Image(systemName: "chevron.right")
                         .font(.footnote.weight(.semibold))
                         // Not the button's tint: same gray arrow as the NavigationLink row.
-                        .foregroundStyle(Color(.tertiaryLabel))
+                        .foregroundStyle(Theme.Text.source)
                         .accessibilityHidden(true)
                 }
                 .contentShape(Rectangle())
