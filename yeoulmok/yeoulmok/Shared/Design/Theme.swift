@@ -128,6 +128,7 @@ extension View {
     /// Content scrolling under the top bar is blurred out, so it never shows through the
     /// back · subscribe buttons (#78). iOS 26's default soft edge is too faint over the
     /// dark photo; iOS 17–18 show the bar's own background when scrolled.
+    /// Used on detail and search; home leaves it out (#83).
     @ViewBuilder
     func topBarScrollEdge() -> some View {
         if #available(iOS 26.0, *) {

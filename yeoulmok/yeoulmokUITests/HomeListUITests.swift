@@ -29,7 +29,7 @@ final class HomeListUITests: XCTestCase {
         let unknown = card(named: "갑천 계곡")
         XCTAssertTrue(unknown.waitForExistence(timeout: 3))
         XCTAssertTrue(unknown.label.contains("판정 불가"))
-        XCTAssertTrue(unknown.label.contains("상류 1시간 강수 - · 하류 수위 -"))
+        XCTAssertTrue(unknown.label.contains("상류 1시간 강수 - · 하류 30분 상승 -"))
     }
 
     /// APP-HOME-02: "+ 계곡 추가" takes the user to the search tab.

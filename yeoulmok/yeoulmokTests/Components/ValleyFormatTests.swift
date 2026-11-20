@@ -16,10 +16,10 @@ struct ValleyFormatTests {
     @Test(arguments: [
         (0.22, "+0.22m"),
         (0.06, "+0.06m"),
-        (0.0, "0.00m"),
+        (0.0, "+0.00m"),
         (-0.05, "-0.05m"),
-        (0.001, "0.00m"),
-        (-0.001, "0.00m"),
+        (0.001, "+0.00m"),
+        (-0.001, "+0.00m"),
     ] as [(Double, String)])
     func waterRise(meters: Double, expected: String) {
         #expect(ValleyFormat.waterRise(meters) == expected)

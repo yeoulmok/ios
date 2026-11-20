@@ -12,12 +12,12 @@ nonisolated enum ValleyFormat {
         return String(format: "%.1fmm", mm)
     }
 
-    /// Water level change with two decimals and a sign: `+0.22m`, `0.00m`, `-0.05m`.
-    /// Values that round to zero show as `0.00m` (no `+` or `-`).
+    /// Water level change with two decimals and a sign: `+0.22m`, `+0.00m`, `-0.05m`.
+    /// Values that round to zero show as `+0.00m`, so it reads as a change, not a level (#83).
     static func waterRise(_ meters: Double?) -> String {
         guard let meters else { return missing }
         let rounded = (meters * 100).rounded() / 100
-        if rounded == 0 { return "0.00m" }
+        if rounded == 0 { return "+0.00m" }
         return (rounded > 0 ? "+" : "-") + String(format: "%.2fm", abs(rounded))
     }
 

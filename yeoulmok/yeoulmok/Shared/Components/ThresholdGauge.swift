@@ -100,8 +100,8 @@ nonisolated enum GaugeMath {
 #Preview {
     VStack(spacing: 20) {
         ThresholdGauge(title: "강수 1시간", valueText: "32.5mm", thresholdText: "15.0mm", value: 32.5, threshold: 15)
-        ThresholdGauge(title: "수위 30분", valueText: "+0.06m", thresholdText: "0.10m", value: 0.06, threshold: 0.1)
-        ThresholdGauge(title: "수위 30분", valueText: "-", thresholdText: nil, value: nil, threshold: 0.1)
+        ThresholdGauge(title: "30분 상승", valueText: "+0.06m", thresholdText: "0.10m", value: 0.06, threshold: 0.1)
+        ThresholdGauge(title: "30분 상승", valueText: "-", thresholdText: nil, value: nil, threshold: 0.1)
     }
     .padding()
 }
