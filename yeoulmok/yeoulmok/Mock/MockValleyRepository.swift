@@ -22,14 +22,18 @@ actor MockValleyRepository: ValleyRepository {
     private let failsQuestions: Bool
     /// Requests already answered, e.g. "subscribed", "detail-1".
     private var answeredLoads: Set<String> = []
+    /// Wait before each search page, so the loading circles show (`-mockManyValleys`).
+    private let pageDelay: Duration
 
     init(bundle: Bundle = .main, failsSubscriptionChanges: Bool = false, failsFirstLoad: Bool = false,
-         failsRepeatedLoads: Bool = false, failsQuestions: Bool = false) throws {
+         failsRepeatedLoads: Bool = false, failsQuestions: Bool = false,
+         manyValleys: Bool = false, pageDelay: Duration = .zero) throws {
+        self.pageDelay = pageDelay
         self.failsQuestions = failsQuestions
         self.failsSubscriptionChanges = failsSubscriptionChanges
         self.failsNextLoad = failsFirstLoad
         self.failsRepeatedLoads = failsRepeatedLoads
-        list = try MockData.valleyList(bundle: bundle)
+        list = manyValleys ? try MockData.manyValleys(bundle: bundle) : try MockData.valleyList(bundle: bundle)
         details = Dictionary(uniqueKeysWithValues: try MockData.valleyDetails(bundle: bundle).map { ($0.id, $0) })
         histories = Dictionary(uniqueKeysWithValues: try MockData.valleyHistories(bundle: bundle).map { ($0.valleyID, $0) })
         subscriptionOrder = list.valleys.filter(\.isSubscribed).map(\.id)
@@ -37,14 +41,39 @@ actor MockValleyRepository: ValleyRepository {
 
     func valleys(matching query: String?) async throws -> ValleyListResponse {
         try failLoadIfAsked(key: "valleys-\(query ?? "")")
-        var valleys = list.valleys.map(withCurrentSubscription)
-        if let query, !query.isEmpty {
-            valleys = valleys.filter {
-                $0.name.range(of: query, options: .caseInsensitive) != nil
-                    || $0.region.range(of: query, options: .caseInsensitive) != nil
-            }
-        }
+        let valleys = matching(query, in: list.valleys.map(withCurrentSubscription))
         return ValleyListResponse(updatedAt: list.updatedAt, source: list.source, valleys: valleys)
+    }
+
+    /// Like the requested server (#96): text and filter together, `limit` rows from
+    /// `offset`, and `total` for all matches. Keeps the list order (by id): the server
+    /// may sort by name, the app only needs the order to stay the same between pages.
+    func valleyPage(_ request: ValleyPageRequest) async throws -> ValleyListResponse {
+        try failLoadIfAsked(key: "page-\(request.query ?? "")-\(request.filter)-\(request.offset)")
+        if pageDelay > .zero { try await Task.sleep(for: pageDelay) }
+        let matches = matching(request.query, in: list.valleys.map(withCurrentSubscription))
+            .filter { valley in
+                (request.filter.province.map { $0 == valley.province } ?? true)
+                    && (request.filter.city.map { $0 == valley.city } ?? true)
+            }
+        let page = matches.dropFirst(request.offset).prefix(request.limit)
+        return ValleyListResponse(updatedAt: list.updatedAt, source: list.source, valleys: Array(page),
+                                  total: matches.count)
+    }
+
+    /// Never fails: the failure options are about the list, and a failed `regions` only
+    /// hides the chips, which would take the first failure away from the list.
+    func regions() async throws -> ValleyRegions {
+        ValleyRegions.counting(list.valleys)
+    }
+
+    /// The server's search rule: the text is in the name or the region.
+    private func matching(_ query: String?, in valleys: [ValleySummary]) -> [ValleySummary] {
+        guard let query, !query.isEmpty else { return valleys }
+        return valleys.filter {
+            $0.name.range(of: query, options: .caseInsensitive) != nil
+                || $0.region.range(of: query, options: .caseInsensitive) != nil
+        }
     }
 
     func subscribedValleys() async throws -> ValleyListResponse {

@@ -13,6 +13,13 @@ nonisolated enum MockData {
         try load(ValleyListResponse.self, from: "valleys", bundle: bundle)
     }
 
+    /// The 126 valleys of the real server on 2026-11-25, as `GET /valleys` with `province`
+    /// and `city` (#96). Only for trying the search filter and pages
+    /// (`-mockManyValleys`): these ids (1001+) have no detail.
+    static func manyValleys(bundle: Bundle = .main) throws -> ValleyListResponse {
+        try load(ValleyListResponse.self, from: "valleys_many", bundle: bundle)
+    }
+
     /// One `GET /valleys/{id}` response per mock valley.
     static func valleyDetails(bundle: Bundle = .main) throws -> [ValleyDetail] {
         try load([ValleyDetail].self, from: "valley_details", bundle: bundle)

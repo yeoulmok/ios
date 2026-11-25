@@ -212,6 +212,58 @@ extension ServerValleyRepositoryTests {
     }
 }
 
+extension ServerValleyRepositoryTests {
+    /// #96: a search page sends the text, the filter and the page, and reads `total`.
+    @Test func valleyPageSendsFilterAndPage() async throws {
+        let body = #"""
+        {"updated_at": "2026-11-25T10:00", "source": "자료", "total": 12, "limit": 20, "offset": 20,
+         "valleys": [{"id": 1, "name": "금대리 계곡", "region": "원주시 판부면", "province": "강원", "city": "원주시",
+           "lat": 37.27, "lon": 128.01, "level": "safe", "rain_1h_mm": 0.0, "water_rise_30m_m": null,
+           "observed_at": "2026-11-25T09:50", "stale": false, "subscribed": false}]}
+        """#
+        let server = FakeServer { _ in (200, body) }
+        let repository = server.repository(savedID: "d_saved")
+
+        let page = try await repository.valleyPage(ValleyPageRequest(
+            query: " 계곡 ", filter: ValleyFilter(province: "강원", city: "원주시"), offset: 20, limit: 20))
+        _ = try await repository.valleyPage(ValleyPageRequest(query: nil, filter: .all, offset: 0, limit: 20))
+
+        #expect(page.total == 12)
+        #expect(page.valleys.first?.province == "강원")
+        #expect(page.valleys.first?.city == "원주시")
+        #expect(server.requests.map(\.line) == ["GET /api/valleys", "GET /api/valleys"])
+        #expect(server.requests.map(\.query) == [
+            "q=계곡&province=강원&city=원주시&limit=20&offset=20", "limit=20&offset=0",
+        ])
+    }
+
+    /// A city without its province is not sent: the server filters by both.
+    @Test func cityIsOnlySentWithItsProvince() async throws {
+        let server = FakeServer { _ in (200, Self.list) }
+        let repository = server.repository(savedID: "d_saved")
+
+        _ = try await repository.valleyPage(ValleyPageRequest(
+            query: nil, filter: ValleyFilter(province: nil, city: "원주시"), offset: 0, limit: 20))
+
+        #expect(server.requests.map(\.query) == ["limit=20&offset=0"])
+    }
+
+    @Test func regionsUsesItsEndpoint() async throws {
+        let body = #"""
+        {"updated_at": "2026-11-25T10:00", "total": 126, "provinces": [
+          {"province": "강원", "count": 111, "cities": [{"city": "횡성군", "count": 14}]}]}
+        """#
+        let server = FakeServer { _ in (200, body) }
+        let repository = server.repository(savedID: "d_saved")
+
+        let regions = try await repository.regions()
+
+        #expect(regions.total == 126)
+        #expect(regions.provinces.first?.cities.first?.count == 14)
+        #expect(server.requests.map(\.line) == ["GET /api/regions"])
+    }
+}
+
 /// Records requests and answers `/devices` with `d_1`, `d_2`, ... (or 500 while
 /// `failRegistration`); other paths go to `answer`.
 private final class FakeServer: @unchecked Sendable {

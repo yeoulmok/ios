@@ -24,6 +24,26 @@ nonisolated struct ServerValleyRepository: ValleyRepository {
         return try await send(.get, "valleys", query: items, needsDevice: false)
     }
 
+    func valleyPage(_ request: ValleyPageRequest) async throws -> ValleyListResponse {
+        var items: [URLQueryItem] = []
+        if let query = request.query?.trimmingCharacters(in: .whitespacesAndNewlines), !query.isEmpty {
+            items.append(URLQueryItem(name: "q", value: query))
+        }
+        if let province = request.filter.province {
+            items.append(URLQueryItem(name: "province", value: province))
+            if let city = request.filter.city {
+                items.append(URLQueryItem(name: "city", value: city))
+            }
+        }
+        items.append(URLQueryItem(name: "limit", value: String(request.limit)))
+        items.append(URLQueryItem(name: "offset", value: String(request.offset)))
+        return try await send(.get, "valleys", query: items, needsDevice: false)
+    }
+
+    func regions() async throws -> ValleyRegions {
+        try await send(.get, "regions", needsDevice: false)
+    }
+
     func subscribedValleys() async throws -> ValleyListResponse {
         try await send(.get, "me/valleys")
     }
