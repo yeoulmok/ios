@@ -163,7 +163,7 @@ struct SearchPagingTests {
 
         await viewModel.selectProvince("제주")
         #expect(viewModel.state == .empty(query: "신림", source: "자료: 한강홍수통제소, 기상청"))
-        #expect(viewModel.filter.placeName == "제주")
+        #expect(viewModel.shownFilter.placeName == "제주")
 
         await viewModel.clearFilter()
         #expect(viewModel.filter == .all)
@@ -220,6 +220,72 @@ struct SearchPagingTests {
 
         await searching.value
         #expect(!viewModel.isRefreshing)
+    }
+
+    /// Back on the tab after scrolling: the same rows again, not just the first page.
+    @Test func reloadKeepsAsManyRowsAsShown() async throws {
+        let asked = RequestLog()
+        let mock = try MockValleyRepository(manyValleys: true)
+        let viewModel = SearchViewModel(repository: StubRepository(page: { request in
+            asked.append(request)
+            return try await mock.valleyPage(request)
+        }))
+        await viewModel.search()
+        await viewModel.loadMore()
+        await viewModel.loadMore()
+
+        await viewModel.reload("")
+
+        #expect(asked.requests.last?.offset == 0)
+        #expect(asked.requests.last?.limit == 60)
+        #expect(viewModel.valleys.count == 60)
+        #expect(viewModel.canLoadMore)
+    }
+
+    @Test func reloadWithNewTextIsANewSearch() async throws {
+        let viewModel = try manyValleys()
+        await viewModel.search()
+        await viewModel.loadMore()
+
+        await viewModel.reload("도림천")
+
+        #expect(viewModel.valleys.map(\.name) == ["신림동 도림천"])
+    }
+
+    /// While 강원 is on its way the chip is on at once, but the title still names the
+    /// list on screen.
+    @Test func titleFollowsTheListNotTheTappedChip() async throws {
+        let mock = try MockValleyRepository(manyValleys: true)
+        let viewModel = SearchViewModel(repository: StubRepository(page: { request in
+            if request.filter.province != nil { try await Task.sleep(for: .milliseconds(300)) }
+            return try await mock.valleyPage(request)
+        }))
+        await viewModel.search()
+
+        let choosing = Task { await viewModel.selectProvince("강원") }
+        try await Task.sleep(for: .milliseconds(50))
+        #expect(viewModel.filter.province == "강원")
+        #expect(viewModel.shownFilter == .all)
+        #expect(viewModel.total == 126)
+
+        await choosing.value
+        #expect(viewModel.shownFilter.province == "강원")
+        #expect(viewModel.total == 111)
+    }
+
+    @Test func failedFilterPutsTheChipsBack() async throws {
+        let mock = try MockValleyRepository(manyValleys: true)
+        let viewModel = SearchViewModel(repository: StubRepository(page: { request in
+            if request.filter.province == "강원" { throw URLError(.notConnectedToInternet) }
+            return try await mock.valleyPage(request)
+        }))
+        await viewModel.search()
+
+        await viewModel.selectProvince("강원")
+
+        #expect(viewModel.filter == .all)
+        #expect(viewModel.offlineAsOf != nil)
+        #expect(viewModel.valleys.count == 20)
     }
 
     /// The very first load is the big spinner (`.loading`), not "refreshing".

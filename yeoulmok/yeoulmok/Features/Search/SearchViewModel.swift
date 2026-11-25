@@ -18,7 +18,7 @@ final class SearchViewModel {
         case loaded(valleys: [ValleySummary], source: String)
         /// Request succeeded but nothing matched (Figma 02a).
         /// `query` is the trimmed search text, empty when there was none.
-        /// The filter that was on is `filter`.
+        /// The filter that was on is `shownFilter`.
         case empty(query: String, source: String)
         /// Request failed and nothing was loaded before. Screen: `ErrorStateView`.
         case failed(message: String)
@@ -32,8 +32,11 @@ final class SearchViewModel {
     /// Provinces for the filter chips, most valleys first. Empty when the server has no
     /// `/regions` yet: then the chips are hidden and the list works as before.
     private(set) var regions: [ValleyRegions.Province] = []
-    /// The filter the list on screen was asked with.
+    /// The chosen chips. Changes at once on a tap; the list follows when it arrives.
     private(set) var filter: ValleyFilter = .all
+    /// The filter the list (or empty screen) on screen was asked with, for its title
+    /// and wording, so they never name a place whose list has not arrived yet.
+    private(set) var shownFilter: ValleyFilter = .all
     /// All matches for the list on screen; `nil` when the server sent everything at once.
     private(set) var total: Int?
     /// A new first page is on its way while the old list (or empty screen) is shown.
@@ -95,18 +98,34 @@ final class SearchViewModel {
     /// and the current filter. Does not reset `state` to `.loading`, so the old list
     /// stays (dimmed, `isRefreshing`) while waiting.
     func search(_ query: String = "") async {
+        await load(query, limit: Self.pageSize, quietly: false)
+    }
+
+    /// The tab appears again (e.g. back from a detail, where the user may have
+    /// subscribed): the same list asked again with as many rows as are shown, so it
+    /// neither shrinks back to one page nor dims. The first time it is `search`.
+    func reload(_ query: String) async {
+        guard case let .loaded(shown, _) = state, query == lastQuery else {
+            await search(query)
+            return
+        }
+        await load(query, limit: max(Self.pageSize, shown.count), quietly: true)
+    }
+
+    private func load(_ query: String, limit: Int, quietly: Bool) async {
         latestRequest += 1
         let request = latestRequest
         lastQuery = query
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        isRefreshing = state != .loading
+        isRefreshing = !quietly && state != .loading
+        let requestedFilter = filter
         isLoadingMore = false
         loadMoreFailed = false
 
         let result: Result<ValleyListResponse, any Error>
         do {
             result = .success(try await repository.valleyPage(ValleyPageRequest(
-                query: trimmed.isEmpty ? nil : trimmed, filter: filter, offset: 0, limit: Self.pageSize)))
+                query: trimmed.isEmpty ? nil : trimmed, filter: requestedFilter, offset: 0, limit: limit)))
         } catch {
             result = .failure(error)
         }
@@ -120,13 +139,16 @@ final class SearchViewModel {
                 ? .empty(query: trimmed, source: response.source)
                 : .loaded(valleys: response.valleys, source: response.source)
             total = response.total
+            shownFilter = requestedFilter
             shownUpdatedAt = response.updatedAt
             offlineAsOf = nil
         case let .failure(error):
             switch state {
             case .loaded, .empty:
-                // Feature spec 3-1: keep what is shown and say how old it is.
+                // Feature spec 3-1: keep what is shown and say how old it is. The chips
+                // go back to the list that stays, like a subscribe button that fails.
                 offlineAsOf = shownUpdatedAt
+                filter = shownFilter
             case .loading, .failed:
                 state = .failed(message: ErrorMessage.text(for: error))
             }
@@ -145,7 +167,7 @@ final class SearchViewModel {
         let result: Result<ValleyListResponse, any Error>
         do {
             result = .success(try await repository.valleyPage(ValleyPageRequest(
-                query: trimmed.isEmpty ? nil : trimmed, filter: filter,
+                query: trimmed.isEmpty ? nil : trimmed, filter: shownFilter,
                 offset: shown.count, limit: Self.pageSize)))
         } catch {
             result = .failure(error)
