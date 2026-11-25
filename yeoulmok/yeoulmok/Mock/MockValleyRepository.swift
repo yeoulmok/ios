@@ -45,8 +45,9 @@ actor MockValleyRepository: ValleyRepository {
         return ValleyListResponse(updatedAt: list.updatedAt, source: list.source, valleys: valleys)
     }
 
-    /// Like the requested server (#96): text and filter together, by name then id,
-    /// `limit` rows from `offset`, and `total` for all matches.
+    /// Like the requested server (#96): text and filter together, `limit` rows from
+    /// `offset`, and `total` for all matches. Keeps the list order (by id): the server
+    /// may sort by name, the app only needs the order to stay the same between pages.
     func valleyPage(_ request: ValleyPageRequest) async throws -> ValleyListResponse {
         try failLoadIfAsked(key: "page-\(request.query ?? "")-\(request.filter)-\(request.offset)")
         if pageDelay > .zero { try await Task.sleep(for: pageDelay) }
@@ -55,7 +56,6 @@ actor MockValleyRepository: ValleyRepository {
                 (request.filter.province.map { $0 == valley.province } ?? true)
                     && (request.filter.city.map { $0 == valley.city } ?? true)
             }
-            .sorted { ($0.name, $0.id) < ($1.name, $1.id) }
         let page = matches.dropFirst(request.offset).prefix(request.limit)
         return ValleyListResponse(updatedAt: list.updatedAt, source: list.source, valleys: Array(page),
                                   total: matches.count)

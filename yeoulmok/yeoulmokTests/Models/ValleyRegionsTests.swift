@@ -39,7 +39,7 @@ struct ValleyRegionsTests {
 
     // MARK: Mock
 
-    @Test func mockPagesAreByNameWithTotal() async throws {
+    @Test func mockPagesFollowEachOtherWithTotal() async throws {
         let repository = try MockValleyRepository(manyValleys: true)
 
         let first = try await repository.valleyPage(ValleyPageRequest(query: nil, filter: .all, offset: 0, limit: 20))
@@ -47,7 +47,6 @@ struct ValleyRegionsTests {
 
         #expect(first.total == 126)
         #expect(first.valleys.count == 20)
-        #expect(first.valleys.map(\.name) == first.valleys.map(\.name).sorted())
         #expect(last.valleys.count == 6)
         #expect(Set(first.valleys.map(\.id)).isDisjoint(with: last.valleys.map(\.id)))
     }
