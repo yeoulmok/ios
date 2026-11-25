@@ -26,6 +26,8 @@ final class SearchViewModel {
 
     /// Valleys asked for at a time.
     static let pageSize = 20
+    /// The most the server sends in one answer (`limit` 1~100, else 422; server PR #83).
+    static let maxLimit = 100
 
     private(set) var state: State = .loading
 
@@ -124,8 +126,8 @@ final class SearchViewModel {
 
         let result: Result<ValleyListResponse, any Error>
         do {
-            result = .success(try await repository.valleyPage(ValleyPageRequest(
-                query: trimmed.isEmpty ? nil : trimmed, filter: requestedFilter, offset: 0, limit: limit)))
+            result = .success(try await firstRows(limit, query: trimmed.isEmpty ? nil : trimmed,
+                                                  filter: requestedFilter))
         } catch {
             result = .failure(error)
         }
@@ -153,6 +155,25 @@ final class SearchViewModel {
                 state = .failed(message: ErrorMessage.text(for: error))
             }
         }
+    }
+
+    /// The first `count` matches, in requests of at most `maxLimit` (#98: coming back
+    /// after scrolling past 100 rows asked for `limit=111` and got 422). Stops early
+    /// when the server has no more; the last answer's `total` counts.
+    private func firstRows(_ count: Int, query: String?, filter: ValleyFilter) async throws -> ValleyListResponse {
+        var answer = try await repository.valleyPage(ValleyPageRequest(
+            query: query, filter: filter, offset: 0, limit: min(count, Self.maxLimit)))
+        var rows = answer.valleys
+        while rows.count < count, let total = answer.total, rows.count < total {
+            answer = try await repository.valleyPage(ValleyPageRequest(
+                query: query, filter: filter, offset: rows.count, limit: min(count - rows.count, Self.maxLimit)))
+            let known = Set(rows.map(\.id))
+            let added = answer.valleys.filter { !known.contains($0.id) }
+            if added.isEmpty { break }
+            rows += added
+        }
+        return ValleyListResponse(updatedAt: answer.updatedAt, source: answer.source, valleys: rows,
+                                  total: answer.total)
     }
 
     /// The next page, when the end of the list comes into view. Does nothing while a

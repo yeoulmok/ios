@@ -55,9 +55,9 @@ struct ValleyRegionsTests {
         let repository = try MockValleyRepository(manyValleys: true)
 
         let gangwon = try await repository.valleyPage(ValleyPageRequest(
-            query: nil, filter: ValleyFilter(province: "강원", city: nil), offset: 0, limit: 200))
+            query: nil, filter: ValleyFilter(province: "강원", city: nil), offset: 0, limit: 100))
         let hoengseong = try await repository.valleyPage(ValleyPageRequest(
-            query: nil, filter: ValleyFilter(province: "강원", city: "횡성군"), offset: 0, limit: 200))
+            query: nil, filter: ValleyFilter(province: "강원", city: "횡성군"), offset: 0, limit: 100))
         let none = try await repository.valleyPage(ValleyPageRequest(
             query: "설악", filter: ValleyFilter(province: "강원", city: "횡성군"), offset: 0, limit: 20))
 
@@ -66,6 +66,18 @@ struct ValleyRegionsTests {
         #expect(hoengseong.valleys.allSatisfy { $0.city == "횡성군" })
         #expect(none.total == 0)
         #expect(none.valleys.isEmpty)
+    }
+
+    /// #98: like the server, `limit` must be 1~100.
+    @Test func mockRejectsALimitOverAHundred() async throws {
+        let repository = try MockValleyRepository(manyValleys: true)
+
+        await #expect(throws: APIError.self) {
+            try await repository.valleyPage(ValleyPageRequest(query: nil, filter: .all, offset: 0, limit: 101))
+        }
+        await #expect(throws: APIError.self) {
+            try await repository.valleyPage(ValleyPageRequest(query: nil, filter: .all, offset: 0, limit: 0))
+        }
     }
 
     @Test func mockRegionsCountTheList() async throws {
