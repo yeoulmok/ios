@@ -18,9 +18,14 @@ nonisolated struct ValleySummary: Codable, Identifiable, Equatable {
     let isStale: Bool
     /// `var` so a repository can return a copy after subscribe / unsubscribe.
     var isSubscribed: Bool
+    /// Short province name for the search filter, e.g. "강원", "서울" (APP-SRCH-04, #96).
+    /// `nil` from a server that does not send it yet; `region` is still shown as is.
+    var province: String? = nil
+    /// City, county or district, e.g. "원주시", "관악구". `nil` like `province`.
+    var city: String? = nil
 
     enum CodingKeys: String, CodingKey {
-        case id, name, region, level
+        case id, name, region, level, province, city
         case latitude = "lat"
         case longitude = "lon"
         case rainLastHourMM = "rain_1h_mm"
@@ -38,9 +43,12 @@ nonisolated struct ValleyListResponse: Codable, Equatable {
     /// Data source text that must be shown on screen.
     let source: String
     let valleys: [ValleySummary]
+    /// How many valleys match in all, when the list comes in pages (`limit` · `offset`,
+    /// #96). `nil` from a server without pages: then `valleys` is everything.
+    var total: Int? = nil
 
     enum CodingKeys: String, CodingKey {
         case updatedAt = "updated_at"
-        case source, valleys
+        case source, valleys, total
     }
 }

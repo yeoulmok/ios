@@ -88,7 +88,7 @@ struct YeoulmokApp: App {
 
     /// The real server, except in DEBUG runs that ask for the bundled mock data:
     /// UI tests (`-useMockData`, `-mockSubscriptionFails`, `-mockLoadFailsOnce`,
-    /// `-mockOfflineAfterFirstLoad`) and the unit tests' host app,
+    /// `-mockOfflineAfterFirstLoad`, `-mockManyValleys`) and the unit tests' host app,
     /// so tests never depend on the server's data or register devices on it.
     private static func makeRepository() -> any ValleyRepository {
         // `registrar` is nil exactly when `usesMockData` is true.
@@ -107,7 +107,7 @@ struct YeoulmokApp: App {
     private static var usesMockData: Bool {
         launchedWith("-useMockData") || launchedWith("-mockSubscriptionFails")
             || launchedWith("-mockLoadFailsOnce") || launchedWith("-mockOfflineAfterFirstLoad")
-            || isUnitTestHost
+            || launchedWith("-mockManyValleys") || isUnitTestHost
     }
 
     private static func makeMockRepository() -> any ValleyRepository {
@@ -115,7 +115,10 @@ struct YeoulmokApp: App {
             return try MockValleyRepository(failsSubscriptionChanges: launchedWith("-mockSubscriptionFails"),
                                             failsFirstLoad: launchedWith("-mockLoadFailsOnce"),
                                             failsRepeatedLoads: launchedWith("-mockOfflineAfterFirstLoad"),
-                                            failsQuestions: launchedWith("-mockAskFails"))
+                                            failsQuestions: launchedWith("-mockAskFails"),
+                                            // The real server's 126 valleys, a page every 0.6 s (#96).
+                                            manyValleys: launchedWith("-mockManyValleys"),
+                                            pageDelay: launchedWith("-mockManyValleys") ? .milliseconds(600) : .zero)
         } catch {
             // The mock JSON ships inside the app, so this only fails if the build is broken.
             fatalError("Mock data is missing from the app bundle: \(error)")

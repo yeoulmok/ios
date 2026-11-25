@@ -14,6 +14,11 @@ struct StubRepository: ValleyRepository {
     var ask: @Sendable (Int, String) async throws -> AskAnswer
     /// `history(valleyID:hours:)` (#90).
     var history: @Sendable (Int, Int) async throws -> ValleyHistory
+    /// `valleyPage(_:)` (#96). `nil`: answers with `list(query)`, like a server without
+    /// pages (no `total`), so older search tests keep working through `list`.
+    var page: (@Sendable (ValleyPageRequest) async throws -> ValleyListResponse)?
+    /// `regions()` (#96).
+    var regionList: @Sendable () async throws -> ValleyRegions
 
     init(
         list: @escaping @Sendable (String?) async throws -> ValleyListResponse = { query in
@@ -28,8 +33,14 @@ struct StubRepository: ValleyRepository {
         },
         history: @escaping @Sendable (Int, Int) async throws -> ValleyHistory = { id, hours in
             try await MockValleyRepository().history(valleyID: id, hours: hours)
+        },
+        page: (@Sendable (ValleyPageRequest) async throws -> ValleyListResponse)? = nil,
+        regionList: @escaping @Sendable () async throws -> ValleyRegions = {
+            try await MockValleyRepository().regions()
         }
     ) {
+        self.page = page
+        self.regionList = regionList
         self.history = history
         self.ask = ask
         self.list = list
@@ -38,6 +49,11 @@ struct StubRepository: ValleyRepository {
     }
 
     func valleys(matching query: String?) async throws -> ValleyListResponse { try await list(query) }
+    func valleyPage(_ request: ValleyPageRequest) async throws -> ValleyListResponse {
+        if let page { return try await page(request) }
+        return try await list(request.query)
+    }
+    func regions() async throws -> ValleyRegions { try await regionList() }
     func subscribedValleys() async throws -> ValleyListResponse { try await list(nil) }
     func valleyDetail(id: Int) async throws -> ValleyDetail { try await detail(id) }
     func subscribe(valleyID: Int) async throws { try await changeSubscription(valleyID, true) }

@@ -9,6 +9,14 @@ nonisolated protocol ValleyRepository: Sendable {
     /// `GET /valleys`. `query` matches name or region; `nil` or empty returns every valley.
     func valleys(matching query: String?) async throws -> ValleyListResponse
 
+    /// `GET /valleys` one page at a time, for the search list (APP-SRCH-04, #96):
+    /// valleys matching the text and the filter, by name. `total` says how many there
+    /// are in all; a server without pages ignores the extras and sends everything.
+    func valleyPage(_ request: ValleyPageRequest) async throws -> ValleyListResponse
+
+    /// `GET /regions` (#96): provinces and cities with their valley counts.
+    func regions() async throws -> ValleyRegions
+
     /// `GET /me/valleys`. Subscribed valleys, oldest subscription first.
     func subscribedValleys() async throws -> ValleyListResponse
 

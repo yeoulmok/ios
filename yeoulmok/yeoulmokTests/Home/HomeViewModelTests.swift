@@ -125,6 +125,8 @@ private struct FailingRepository: ValleyRepository {
     let error: any Error
 
     func valleys(matching query: String?) async throws -> ValleyListResponse { throw error }
+    func valleyPage(_ request: ValleyPageRequest) async throws -> ValleyListResponse { throw error }
+    func regions() async throws -> ValleyRegions { throw error }
     func subscribedValleys() async throws -> ValleyListResponse { throw error }
     func valleyDetail(id: Int) async throws -> ValleyDetail { throw error }
     func subscribe(valleyID: Int) async throws { throw error }
