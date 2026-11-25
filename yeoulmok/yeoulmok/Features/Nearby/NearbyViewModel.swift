@@ -64,6 +64,12 @@ final class NearbyViewModel {
         }
     }
 
+    /// Pull to refresh: never a kept answer (#103), then the same as `load`.
+    func refresh() async {
+        await repository.invalidateCache()
+        await load()
+    }
+
     /// Finds the user, then the closest valleys. Also for pull to refresh: never goes
     /// back to `.loading`, so the current list stays while waiting.
     /// The location is only used here, on the phone; it is never sent to the server.

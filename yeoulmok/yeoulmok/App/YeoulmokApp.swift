@@ -21,6 +21,7 @@ struct YeoulmokApp: App {
                     ? SystemLocationPermission.mockLocation : nil)
             }, onboardingStore: onboardingStore, pushRouter: appDelegate.pushRouter)
             .task {
+                appDelegate.pushArrived = { [repository] in await repository.invalidateCache() }
                 if let valleyID = Self.mockPushValleyID {
                     appDelegate.pushRouter.open(valleyID: valleyID)
                 }

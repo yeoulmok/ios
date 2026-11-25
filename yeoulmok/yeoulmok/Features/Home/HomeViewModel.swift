@@ -53,7 +53,13 @@ final class HomeViewModel {
         self.locationTimeout = locationTimeout
     }
 
-    /// Loads subscribed valleys, also for pull to refresh (#9).
+    /// Pull to refresh: never a kept answer (#103), then the same as `load`.
+    func refresh() async {
+        await repository.invalidateCache()
+        await load()
+    }
+
+    /// Loads subscribed valleys (pull to refresh goes through `refresh`, #9).
     /// Never goes back to `.loading`, so the current list stays while waiting.
     /// On failure (feature spec 3-1):
     /// - something already shown: keep it and set `offlineAsOf`;

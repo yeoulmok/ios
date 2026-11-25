@@ -154,6 +154,27 @@ struct CachingValleyRepositoryTests {
         #expect(await server.count(.subscribed) == 2)
     }
 
+    /// Pull to refresh on home, detail and nearby always reaches the server.
+    @MainActor
+    @Test func pullToRefreshAsksTheServerAgain() async throws {
+        let server = CountingRepository()
+        let repository = CachingValleyRepository(wrapping: server)
+        let home = HomeViewModel(repository: repository)
+        let detail = ValleyDetailViewModel(valleyID: 1, repository: repository)
+        let nearby = NearbyViewModel(permission: FakeLocationPermission(.allowed), repository: repository)
+
+        await home.load()
+        await detail.load()
+        await nearby.load()
+        await home.refresh()
+        await detail.refresh()
+        await nearby.refresh()
+
+        #expect(await server.count(.subscribed) == 2)
+        #expect(await server.count(.history(1, 3)) == 2)
+        #expect(await server.count(.allValleys) == 2)
+    }
+
     /// The number written in the PR: app start → home → featured detail → back →
     /// nearby tab → home tab, all within a minute.
     @MainActor

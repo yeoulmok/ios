@@ -81,7 +81,7 @@ struct NearbyView: View {
                 }
                 .padding()
             }
-            .refreshable { await viewModel.load() }
+            .refreshable { await viewModel.refresh() }
         case let .empty(source):
             pullable {
                 VStack(alignment: .leading) {
@@ -134,7 +134,7 @@ struct NearbyView: View {
                 .padding()
                 .containerRelativeFrame([.horizontal, .vertical])
         }
-        .refreshable { await viewModel.load() }
+        .refreshable { await viewModel.refresh() }
     }
 }
 
