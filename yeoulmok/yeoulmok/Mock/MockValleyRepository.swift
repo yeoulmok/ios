@@ -50,6 +50,10 @@ actor MockValleyRepository: ValleyRepository {
     /// may sort by name, the app only needs the order to stay the same between pages.
     func valleyPage(_ request: ValleyPageRequest) async throws -> ValleyListResponse {
         try failLoadIfAsked(key: "page-\(request.query ?? "")-\(request.filter)-\(request.offset)")
+        // The server takes `limit` 1~100 and `offset` 0 or more, else 422 (server PR #83).
+        guard (1...100).contains(request.limit), request.offset >= 0 else {
+            throw APIError(code: "VALIDATION_ERROR", message: "limit 1~100, offset 0 이상")
+        }
         if pageDelay > .zero { try await Task.sleep(for: pageDelay) }
         let matches = matching(request.query, in: list.valleys.map(withCurrentSubscription))
             .filter { valley in

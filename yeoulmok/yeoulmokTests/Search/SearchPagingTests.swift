@@ -242,6 +242,43 @@ struct SearchPagingTests {
         #expect(viewModel.canLoadMore)
     }
 
+    /// #98: back on the tab after scrolling past 100 rows. The server takes at most
+    /// 100 at a time, so the rows come back in two requests, with no offline banner.
+    @Test func reloadPastAHundredRowsAsksInChunks() async throws {
+        let asked = RequestLog()
+        let mock = try MockValleyRepository(manyValleys: true)
+        let viewModel = SearchViewModel(repository: StubRepository(page: { request in
+            asked.append(request)
+            return try await mock.valleyPage(request)
+        }))
+        await viewModel.search()
+        for _ in 0..<10 { await viewModel.loadMore() }
+        #expect(viewModel.valleys.count == 126)
+
+        await viewModel.reload("")
+
+        #expect(asked.requests.suffix(2).map(\.offset) == [0, 100])
+        #expect(asked.requests.suffix(2).map(\.limit) == [100, 26])
+        #expect(viewModel.valleys.count == 126)
+        #expect(Set(viewModel.valleys.map(\.id)).count == 126)
+        #expect(viewModel.offlineAsOf == nil)
+        #expect(viewModel.hasLoadedAll)
+    }
+
+    /// A list that shrank on the server meanwhile: stops when there is no more.
+    @Test func reloadStopsWhenTheServerHasFewer() async throws {
+        let viewModel = try manyValleys()
+        await viewModel.selectProvince("강원")
+        for _ in 0..<10 { await viewModel.loadMore() }
+        #expect(viewModel.valleys.count == 111)
+
+        await viewModel.reload("")
+
+        #expect(viewModel.valleys.count == 111)
+        #expect(viewModel.total == 111)
+        #expect(viewModel.offlineAsOf == nil)
+    }
+
     @Test func reloadWithNewTextIsANewSearch() async throws {
         let viewModel = try manyValleys()
         await viewModel.search()
