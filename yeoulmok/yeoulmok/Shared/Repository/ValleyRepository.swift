@@ -39,8 +39,14 @@ nonisolated protocol ValleyRepository: Sendable {
     /// Forget saved answers, so the next requests go to the server (#103): pull to
     /// refresh and pushes call this. Repositories without a cache do nothing.
     func invalidateCache() async
+
+    /// A hint that `valleyDetail(id:)` will likely be asked soon (#103): a repository
+    /// with a cache starts that request now, so the later call joins it. Others do
+    /// nothing, so a hint never changes what a mock counts.
+    func prefetchDetail(id: Int) async
 }
 
 extension ValleyRepository {
     nonisolated func invalidateCache() async {}
+    nonisolated func prefetchDetail(id: Int) async {}
 }

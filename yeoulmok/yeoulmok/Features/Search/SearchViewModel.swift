@@ -28,6 +28,10 @@ final class SearchViewModel {
     static let pageSize = 20
     /// The most the server sends in one answer (`limit` 1~100, else 422; server PR #83).
     static let maxLimit = 100
+    /// The next page is asked for when one of the last this-many rows shows (#103),
+    /// so it is there before the user reaches the end. Half a page: a row counts as
+    /// shown when it enters the bottom of the screen, and about 8 rows fit on one.
+    static let prefetchDistance = 10
 
     private(set) var state: State = .loading
 
@@ -174,6 +178,13 @@ final class SearchViewModel {
         }
         return ValleyListResponse(updatedAt: answer.updatedAt, source: answer.source, valleys: rows,
                                   total: answer.total)
+    }
+
+    /// A row came into view: one of the last `prefetchDistance` rows asks for the next
+    /// page early (#103). `loadMore` already ignores repeats, failures, and the end.
+    func rowAppeared(_ valley: ValleySummary) async {
+        guard valleys.suffix(Self.prefetchDistance).contains(where: { $0.id == valley.id }) else { return }
+        await loadMore()
     }
 
     /// The next page, when the end of the list comes into view. Does nothing while a

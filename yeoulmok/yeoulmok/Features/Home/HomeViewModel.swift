@@ -69,6 +69,13 @@ final class HomeViewModel {
         // The location is found while the list loads. The list and the featured card are
         // then set together, so the list never jumps down when the card appears (#59).
         async let place = currentLocationIfAllowed()
+        // #103: the featured detail is asked for only after the list (two round trips
+        // in a row). Guess it now so both travel together; a wrong guess costs one
+        // small request and the right one is asked as before.
+        if let guess = await featuredGuess() {
+            let repository = repository
+            Task { await repository.prefetchDetail(id: guess) }
+        }
         let result: Result<ValleyListResponse, any Error>
         do {
             result = .success(try await repository.subscribedValleys())
@@ -97,6 +104,14 @@ final class HomeViewModel {
             }
         }
         await loadFeaturedDetail()
+    }
+
+    /// The featured valley on screen, else the one the saved list gives (just after
+    /// launch). Without the location here, so it can be wrong near a closer valley.
+    private func featuredGuess() async -> Int? {
+        if let shown = featured?.valley.id { return shown }
+        guard let saved = await cache?.subscribedValleys() else { return nil }
+        return FeaturedValley.pick(from: saved.valleys.sortedForHome(), near: nil)?.valley.id
     }
 
     /// The location, or `nil` when it is not allowed, fails, or takes longer than

@@ -175,6 +175,75 @@ struct CachingValleyRepositoryTests {
         #expect(await server.count(.allValleys) == 2)
     }
 
+    // MARK: Featured detail guess (#103, item 3)
+
+    /// Mock subscriptions: 1 금대리 (주의), 2 갑천 (판정 불가), 4 위험 예시 (위험) → 4 is featured.
+    private func savedList(_ ids: [Int]) async throws -> ValleyCache {
+        let cache = ValleyCache(directory: FileManager.default.temporaryDirectory
+            .appending(path: "GuessTests-\(UUID().uuidString)", directoryHint: .isDirectory))
+        let all = try await MockValleyRepository().subscribedValleys()
+        await cache.saveSubscribedValleys(ValleyListResponse(
+            updatedAt: all.updatedAt, source: all.source, valleys: all.valleys.filter { ids.contains($0.id) }))
+        return cache
+    }
+
+    @MainActor
+    @Test func justAfterLaunchTheFeaturedDetailTravelsWithTheList() async throws {
+        let server = CountingRepository(delay: .milliseconds(150))
+        let home = HomeViewModel(repository: CachingValleyRepository(wrapping: server),
+                                 cache: try await savedList([1, 2, 4]))
+
+        await home.load()
+
+        let events = await server.events
+        let detailStart = try #require(events.firstIndex(of: "start detail(4)"))
+        let listEnd = try #require(events.firstIndex(of: "end subscribed"))
+        #expect(detailStart < listEnd)
+        #expect(await server.count(.detail(4)) == 1)
+        #expect(home.featuredDetail?.id == 4)
+    }
+
+    @MainActor
+    @Test func aWrongGuessStillShowsTheRightValley() async throws {
+        let server = CountingRepository()
+        // The saved list only had 1, so 1 is guessed; the server's list makes 4 featured.
+        let home = HomeViewModel(repository: CachingValleyRepository(wrapping: server),
+                                 cache: try await savedList([1]))
+
+        await home.load()
+
+        #expect(home.featured?.valley.id == 4)
+        #expect(home.featuredDetail?.id == 4)
+        #expect(await server.count(.detail(4)) == 1)
+        #expect(await server.count(.detail(1)) <= 1)
+    }
+
+    @MainActor
+    @Test func nothingSavedNothingGuessed() async throws {
+        let server = CountingRepository()
+        let home = HomeViewModel(repository: CachingValleyRepository(wrapping: server))
+
+        await home.load()
+
+        let events = await server.events
+        #expect(events.prefix(2) == ["start subscribed", "end subscribed"])
+        #expect(await server.total == 2)
+    }
+
+    /// Without a cache the hint does nothing: mocks (and their failure switches) see
+    /// the same requests as before.
+    @MainActor
+    @Test func repositoryWithoutACacheIgnoresTheGuess() async throws {
+        let server = CountingRepository()
+        let home = HomeViewModel(repository: server, cache: try await savedList([1, 2, 4]))
+
+        await home.load()
+        try await Task.sleep(for: .milliseconds(50))
+
+        #expect(await server.count(.detail(4)) == 1)
+        #expect(await server.total == 2)
+    }
+
     /// The number written in the PR: app start → home → featured detail → back →
     /// nearby tab → home tab, all within a minute.
     @MainActor
@@ -207,6 +276,8 @@ private actor CountingRepository: ValleyRepository {
     private var failures: Int
     private let failsSubscriptions: Bool
     private var calls: [Call: Int] = [:]
+    /// "start …" and "end …" in the order they happened.
+    private(set) var events: [String] = []
 
     init(delay: Duration? = nil, failures: Int = 0, failsSubscriptions: Bool = false) {
         mock = try! MockValleyRepository()
@@ -222,6 +293,8 @@ private actor CountingRepository: ValleyRepository {
 
     private func record(_ call: Call) async throws {
         calls[call, default: 0] += 1
+        events.append("start \(call)")
+        defer { events.append("end \(call)") }
         if let delay { try await Task.sleep(for: delay) }
         if failures > 0 {
             failures -= 1

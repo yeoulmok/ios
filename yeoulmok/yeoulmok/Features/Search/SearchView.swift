@@ -133,6 +133,9 @@ struct SearchView: View {
                 Group {
                     ForEach(valleys) { valley in
                         SearchResultRow(valley: valley)
+                            // #103: the next page starts 10 rows before the end. In its
+                            // own task, so scrolling the row away does not cancel it.
+                            .onAppear { Task { await viewModel.rowAppeared(valley) } }
                     }
                     SearchListEnd(viewModel: viewModel)
                 }

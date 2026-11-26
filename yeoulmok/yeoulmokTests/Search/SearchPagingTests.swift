@@ -115,6 +115,75 @@ struct SearchPagingTests {
         #expect(!viewModel.isLoadingMore)
     }
 
+    // MARK: Prefetch (#103)
+
+    /// A view model whose pages are logged, over the 126 mock valleys.
+    private func loggedPages(delay: Duration? = nil, failsNext: Switch? = nil) throws -> (SearchViewModel, RequestLog) {
+        let asked = RequestLog()
+        let mock = try MockValleyRepository(manyValleys: true)
+        let viewModel = SearchViewModel(repository: StubRepository(page: { request in
+            asked.append(request)
+            if request.offset > 0 {
+                if let delay { try await Task.sleep(for: delay) }
+                if failsNext?.isOn == true { throw URLError(.notConnectedToInternet) }
+            }
+            return try await mock.valleyPage(request)
+        }))
+        return (viewModel, asked)
+    }
+
+    @Test func oneOfTheLastTenRowsAsksForTheNextPage() async throws {
+        let (viewModel, asked) = try loggedPages()
+        await viewModel.search()
+        let rows = viewModel.valleys
+
+        // Rows 1~10 of 20: more than ten rows are still below.
+        for row in rows.prefix(10) { await viewModel.rowAppeared(row) }
+        #expect(asked.requests.count == 1)
+
+        // Row 11: ten rows left.
+        await viewModel.rowAppeared(rows[10])
+        #expect(asked.requests.last?.offset == 20)
+        #expect(viewModel.valleys.count == 40)
+    }
+
+    @Test func manyRowsShowingAtOnceAskOnce() async throws {
+        let (viewModel, asked) = try loggedPages(delay: .milliseconds(100))
+        await viewModel.search()
+        let lastTen = Array(viewModel.valleys.suffix(10))
+
+        await withTaskGroup(of: Void.self) { group in
+            for row in lastTen { group.addTask { await viewModel.rowAppeared(row) } }
+        }
+
+        #expect(asked.requests.map(\.offset) == [0, 20])
+        #expect(viewModel.valleys.count == 40)
+    }
+
+    @Test func rowsDoNotRetryAFailedPage() async throws {
+        let fails = Switch()
+        let (viewModel, asked) = try loggedPages(failsNext: fails)
+        await viewModel.search()
+        fails.isOn = true
+
+        await viewModel.rowAppeared(viewModel.valleys[15])
+        #expect(viewModel.loadMoreFailed)
+        await viewModel.rowAppeared(viewModel.valleys[19])
+
+        // Only "다시 시도" at the end of the list asks again.
+        #expect(asked.requests.map(\.offset) == [0, 20])
+    }
+
+    @Test func rowsAskNothingOnceAllAreShown() async throws {
+        let (viewModel, asked) = try loggedPages()
+        await viewModel.selectProvince("경기")
+        #expect(viewModel.hasLoadedAll)
+
+        await viewModel.rowAppeared(viewModel.valleys[0])
+
+        #expect(asked.requests.count == 1)
+    }
+
     // MARK: Filter
 
     @Test func choosingAProvinceStartsAgainFromTheTop() async throws {
