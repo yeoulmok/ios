@@ -4,9 +4,10 @@ import SwiftUI
 ///
 ///     강수 1시간   ███████████▌|·····  32.5mm / 기준 15.0mm
 ///
-/// The line marks the threshold; the bar turns the warning color past it.
-/// A missing value (`null`) draws no bar at all and shows "-", never an empty bar
-/// that could read as 0.
+/// The line marks the threshold. The bar is water blue (#107), and a value of 0 (or
+/// falling water) still fills a sliver at the left, so the bar reads as "empty for now,
+/// it fills when it rains". A missing value (`null`) draws no bar at all and shows "-",
+/// a dashed outline that never looks like 0.
 struct ThresholdGauge: View {
     let title: String
     let valueText: String
@@ -62,8 +63,7 @@ struct ThresholdGauge: View {
                     Capsule().fill(Color(.systemGray5))
                         .frame(height: 10)
                     Capsule()
-                        .fill(GaugeMath.isOver(value: value, threshold: threshold)
-                              ? ValleyLevel.danger.badgeBackground : Color.primary.opacity(0.55))
+                        .fill(Theme.waterBlue)
                         .frame(width: width * (shown ? fill : 0), height: 10)
                     // The threshold line.
                     Rectangle()
@@ -103,11 +103,14 @@ nonisolated enum GaugeMath {
     /// Where the threshold line sits on the bar (0…1).
     static var thresholdPosition: Double { 1 / range }
 
-    /// How much of the bar to fill (0…1), or `nil` when there is nothing to draw:
-    /// no value, or no usable threshold. Falling water (a negative rise) fills nothing.
+    /// The least a known value fills (#107): 0, or falling water, still shows a sliver.
+    static let minimumFill = 0.04
+
+    /// How much of the bar to fill (`minimumFill`…1), or `nil` when there is nothing to
+    /// draw: no value, or no usable threshold.
     static func fill(value: Double?, threshold: Double?, stages: [Double] = []) -> Double? {
         guard let value, let threshold, threshold > 0 else { return nil }
-        return min(max(value / scale(threshold: threshold, stages: stages), 0), 1)
+        return min(max(value / scale(threshold: threshold, stages: stages), minimumFill), 1)
     }
 
     /// The value at the right end of the bar: 1.5× the threshold, or a bit past the

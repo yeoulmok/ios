@@ -1,135 +1,132 @@
 import Charts
 import SwiftUI
 
-/// "최근 3시간" on the alert detail (APP-DTL-09, #90), from `GET /valleys/{id}/history`:
-///
-///     최근 3시간                       10분 간격
-///     강수 1시간  ▁▁▁▂▃▅▆█   - - 주의 15 - - 위험 25
-///     수위        ────╱‾‾‾
-///
-/// Rain is drawn as bars with the level limits as dashed lines in the level colors.
-/// Water is the height at the gauge (easier to read than the 30-minute change), and
-/// is left out for a valley without a gauge. A row with no value leaves a gap,
-/// never a 0. The card is hidden when there is no history (`ValleyDetailView`).
-struct HistoryCard: View {
-    /// Temporary wording until QA.
+/// Words of the "최근 3시간" charts (APP-DTL-09, #90), from `GET /valleys/{id}/history`.
+/// Since #107 there is no card of its own: the rain chart sits in the rain card and the
+/// water chart in the water card (`ObservationBox`). Temporary wording until QA.
+nonisolated enum HistoryCard {
     static let title = "최근 3시간"
     static let rainTitle = "강수 1시간"
     static let waterTitle = "수위"
+    /// Next to the dot when every rain value is 0.
+    static let noRainNow = "지금 \(ValleyFormat.rainfall(0))"
+}
 
+/// "최근 3시간 · 10분 간격" with the unit at the right (#107): the axis shows numbers only.
+struct HistoryChartSection<Chart: View>: View {
+    let history: ValleyHistory
+    let unit: String
+    @ViewBuilder let chart: Chart
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("\(HistoryCard.title) · \(history.stepMinutes)분 간격")
+                Spacer()
+                Text(unit)
+            }
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(Theme.Text.label)
+            chart
+        }
+    }
+}
+
+/// Rain as water-blue bars, with the level limits as dashed lines in the level colors.
+/// When every value is 0 the chart is not left blank (#107): a line at 0 and a dot at
+/// the end say "no rain now". A row without a value leaves a gap, never a 0.
+struct RainHistoryChart: View {
     let history: ValleyHistory
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .firstTextBaseline) {
-                Text(Self.title).font(.headline)
-                Spacer()
-                Text("\(history.stepMinutes)분 간격")
-                    .font(.caption)
-                    .foregroundStyle(Theme.Text.label)
-            }
-            rainChart
-            if HistoryChartMath.hasWater(history) {
-                waterChart
-            }
-        }
-        .foregroundStyle(Theme.Text.primary)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding()
-        .glassCard()
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(HistoryChartMath.accessibilityText(history))
-        .accessibilityIdentifier("detail.history")
-    }
-
-    // MARK: Rain
-
-    private var rainChart: some View {
         let rain = HistoryChartMath.values(history.points, \.rainLastHourMM)
         let steps = history.thresholds.rainLastHour?.steps ?? []
         let top = HistoryChartMath.scaleTop(maxValue: rain.map(\.value).max() ?? 0, steps: steps)
-        return VStack(alignment: .leading, spacing: 6) {
-            Text(Self.rainTitle)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(Theme.Text.label)
-            Chart {
-                ForEach(rain, id: \.at) { item in
-                    BarMark(x: .value("시각", item.at, unit: .minute), y: .value("강수", item.value), width: 6)
-                        .foregroundStyle(Color.white.opacity(0.75))
-                }
-                ForEach(steps.filter { $0.value <= top }, id: \.level) { step in
-                    RuleMark(y: .value("기준", step.value))
-                        .foregroundStyle(step.level.badgeBackground)
-                        .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
-                        .annotation(position: .top, alignment: .leading, spacing: 2) {
-                            Text("\(step.level.title) \(ValleyFormat.rainfall(step.value))")
-                                .font(.caption2)
-                                .foregroundStyle(step.level.badgeBackground)
-                        }
-                }
+        Chart {
+            ForEach(rain, id: \.at) { item in
+                BarMark(x: .value("시각", item.at, unit: .minute), y: .value("강수", item.value), width: 6)
+                    .foregroundStyle(Theme.waterBlue)
             }
-            .chartYScale(domain: 0...top)
-            .chartXScale(domain: HistoryChartMath.timeDomain(history))
-            .chartXAxis { timeAxis }
-            .environment(\.calendar, HistoryChartMath.calendar)
-            .environment(\.timeZone, ServerDate.timeZone)
-            .chartYAxis { valueAxis(unit: "mm") }
-            .frame(height: 140)
+            if HistoryChartMath.isAllZero(rain), let last = rain.last {
+                RuleMark(y: .value("강수", 0))
+                    .foregroundStyle(Theme.waterBlue.opacity(0.55))
+                    .lineStyle(StrokeStyle(lineWidth: 2))
+                PointMark(x: .value("시각", last.at, unit: .minute), y: .value("강수", 0))
+                    .foregroundStyle(Theme.waterBlue)
+                    .symbolSize(50)
+                    .annotation(position: .top, alignment: .trailing, spacing: 4) {
+                        Text(HistoryCard.noRainNow)
+                            .font(.caption2)
+                            .foregroundStyle(Theme.Text.body)
+                    }
+            }
+            ForEach(steps.filter { $0.value <= top }, id: \.level) { step in
+                RuleMark(y: .value("기준", step.value))
+                    .foregroundStyle(step.level.badgeBackground)
+                    .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
+                    .annotation(position: .top, alignment: .leading, spacing: 2) {
+                        Text("\(step.level.title) \(ValleyFormat.rainfall(step.value))")
+                            .font(.caption2)
+                            .foregroundStyle(step.level.badgeBackground)
+                    }
+            }
         }
+        .chartYScale(domain: 0...top)
+        .historyAxes(history)
+        .frame(height: 130)
     }
+}
 
-    // MARK: Water
+/// The height at the gauge (easier to read than the 30-minute change). The line breaks
+/// at a missing row instead of jumping across it.
+struct WaterHistoryChart: View {
+    let history: ValleyHistory
 
-    private var waterChart: some View {
+    var body: some View {
         let segments = HistoryChartMath.segments(history.points, \.waterLevelM)
-        let domain = HistoryChartMath.waterDomain(history)
-        return VStack(alignment: .leading, spacing: 6) {
-            Text(Self.waterTitle)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(Theme.Text.label)
-            Chart {
-                ForEach(Array(segments.enumerated()), id: \.offset) { index, segment in
-                    ForEach(segment, id: \.at) { item in
-                        LineMark(x: .value("시각", item.at, unit: .minute), y: .value("수위", item.value),
-                                 series: .value("구간", index))
-                            .foregroundStyle(Theme.waterBlue)
-                            .lineStyle(StrokeStyle(lineWidth: 2.5))
-                    }
-                    // A lone value between gaps still shows as a dot.
-                    if segment.count == 1, let only = segment.first {
-                        PointMark(x: .value("시각", only.at, unit: .minute), y: .value("수위", only.value))
-                            .foregroundStyle(Theme.waterBlue)
+        Chart {
+            ForEach(Array(segments.enumerated()), id: \.offset) { index, segment in
+                ForEach(segment, id: \.at) { item in
+                    LineMark(x: .value("시각", item.at, unit: .minute), y: .value("수위", item.value),
+                             series: .value("구간", index))
+                        .foregroundStyle(Theme.waterBlue)
+                        .lineStyle(StrokeStyle(lineWidth: 2.5))
+                }
+                // A lone value between gaps still shows as a dot.
+                if segment.count == 1, let only = segment.first {
+                    PointMark(x: .value("시각", only.at, unit: .minute), y: .value("수위", only.value))
+                        .foregroundStyle(Theme.waterBlue)
+                }
+            }
+        }
+        .chartYScale(domain: HistoryChartMath.waterDomain(history))
+        .historyAxes(history)
+        .frame(height: 110)
+    }
+}
+
+private extension View {
+    /// Hours on the bottom in Korean time, numbers only on the left (the unit is above).
+    func historyAxes(_ history: ValleyHistory) -> some View {
+        chartXScale(domain: HistoryChartMath.timeDomain(history))
+            .chartXAxis {
+                AxisMarks(values: .stride(by: .hour)) { value in
+                    AxisGridLine().foregroundStyle(Color.white.opacity(0.12))
+                    AxisValueLabel {
+                        if let date = value.as(Date.self) {
+                            Text(HistoryChartMath.timeLabel(date)).foregroundStyle(Theme.Text.label)
+                        }
                     }
                 }
             }
-            .chartYScale(domain: domain)
-            .chartXScale(domain: HistoryChartMath.timeDomain(history))
-            .chartXAxis { timeAxis }
+            .chartYAxis {
+                AxisMarks(position: .leading, values: .automatic(desiredCount: 3)) { _ in
+                    AxisGridLine().foregroundStyle(Color.white.opacity(0.12))
+                    AxisValueLabel().foregroundStyle(Theme.Text.label)
+                }
+            }
             .environment(\.calendar, HistoryChartMath.calendar)
             .environment(\.timeZone, ServerDate.timeZone)
-            .chartYAxis { valueAxis(unit: "m") }
-            .frame(height: 110)
-        }
-    }
-
-    // MARK: Axes
-
-    private var timeAxis: some AxisContent {
-        AxisMarks(values: .stride(by: .hour)) { value in
-            AxisGridLine().foregroundStyle(Color.white.opacity(0.12))
-            AxisValueLabel {
-                if let date = value.as(Date.self) {
-                    Text(HistoryChartMath.timeLabel(date)).foregroundStyle(Theme.Text.label)
-                }
-            }
-        }
-    }
-
-    private func valueAxis(unit: String) -> some AxisContent {
-        AxisMarks(position: .leading, values: .automatic(desiredCount: 3)) { _ in
-            AxisGridLine().foregroundStyle(Color.white.opacity(0.12))
-            AxisValueLabel().foregroundStyle(Theme.Text.label)
-        }
     }
 }
 
@@ -220,6 +217,21 @@ nonisolated enum HistoryChartMath {
         return parts.joined(separator: ", ")
     }
 
+    /// Every known rain value is 0 (and there is at least one): no rain in the window.
+    static func isAllZero(_ items: [Item]) -> Bool {
+        !items.isEmpty && items.allSatisfy { $0.value == 0 }
+    }
+
+    /// The rain card says "최근 3시간 0.0mm에서 18.0mm" after its sentence (#107).
+    static func rainSpoken(_ history: ValleyHistory) -> String {
+        "\(HistoryCard.title) \(range(values(history.points, \.rainLastHourMM), ValleyFormat.rainfall))"
+    }
+
+    /// The water card says "최근 3시간 수위 0.21m에서 0.61m" (#107).
+    static func waterSpoken(_ history: ValleyHistory) -> String {
+        "\(HistoryCard.title) \(HistoryCard.waterTitle) \(range(values(history.points, \.waterLevelM)) { String(format: "%.2fm", $0 ?? 0) })"
+    }
+
     private static func range(_ items: [Item], _ format: (Double?) -> String) -> String {
         guard let first = items.first, let last = items.last else { return ValleyFormat.missing }
         return "\(format(first.value))에서 \(format(last.value))"
@@ -230,7 +242,10 @@ nonisolated enum HistoryChartMath {
     let histories = try! MockData.valleyHistories(bundle: .main)
     ScrollView {
         VStack(spacing: 16) {
-            ForEach(histories, id: \.valleyID) { HistoryCard(history: $0) }
+            ForEach(histories, id: \.valleyID) { history in
+                HistoryChartSection(history: history, unit: "mm") { RainHistoryChart(history: history) }
+                HistoryChartSection(history: history, unit: "m") { WaterHistoryChart(history: history) }
+            }
         }
         .padding()
     }

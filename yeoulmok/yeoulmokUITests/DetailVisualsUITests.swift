@@ -24,15 +24,23 @@ final class DetailVisualsUITests: XCTestCase {
         XCTAssertFalse(app.descendants(matching: .any)["detail.estimated"].exists)
     }
 
-    /// APP-DTL-09 (#90): the "최근 3시간" card with rain and water, and level marks.
+    /// APP-DTL-09 (#90): "최근 3시간" for rain and water. Since #107 each chart sits in
+    /// its own card, so each card reads its range after the 24-hour rain.
     @MainActor
-    func testDangerShowsHistoryCardAndLevelMarks() {
+    func testDangerShowsHistoryInsideTheCards() {
         openDetail(4)
-        let history = app.descendants(matching: .any)["detail.history"]
-        XCTAssertTrue(history.waitForExistence(timeout: 3))
-        XCTAssertEqual(history.label, "최근 3시간, 강수 1시간 0.0mm에서 32.5mm, 수위 0.21m에서 0.61m")
         let rain = app.descendants(matching: .any)["detail.observation.0"]
-        XCTAssertEqual(rain.value as? String, "24시간 강수 58.5mm")
+        XCTAssertTrue(rain.waitForExistence(timeout: 3))
+        XCTAssertTrue(waitForValue(rain, "24시간 강수 58.5mm, 최근 3시간 0.0mm에서 32.5mm"))
+        let water = app.descendants(matching: .any)["detail.observation.1"]
+        XCTAssertEqual(water.value as? String, "최근 3시간 수위 0.21m에서 0.61m")
+        XCTAssertFalse(app.descendants(matching: .any)["detail.history"].exists)
+    }
+
+    /// The history arrives a moment after the detail.
+    private func waitForValue(_ element: XCUIElement, _ value: String) -> Bool {
+        let expectation = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", value), object: element)
+        return XCTWaiter.wait(for: [expectation], timeout: 3) == .completed
     }
 
     /// 갑천 계곡 (판정 불가, no water gauge): AI estimate card, no AI explanation.

@@ -9,6 +9,14 @@ struct ObservationSection: View {
     let observations: [ValleyObservation]
     /// Rain over 24 hours (API spec v0.6), added under the 1-hour rain card. `nil`: no line.
     var rainLast24hMM: Double?
+    /// "최근 3시간" (#90), drawn inside the matching cards since #107: rain under the first
+    /// rain card, the water height under the first measured water card. `nil`: no charts.
+    var history: ValleyHistory?
+
+    private var rainIndex: Int? { observations.firstIndex { $0.kind == .rainLastHour } }
+    private var waterIndex: Int? {
+        observations.firstIndex { $0.kind == .waterRise30Min && !$0.isEstimated }
+    }
 
     var body: some View {
         if observations.isEmpty {
@@ -21,11 +29,21 @@ struct ObservationSection: View {
             VStack(spacing: 8) {
                 ForEach(Array(observations.enumerated()), id: \.offset) { index, observation in
                     ObservationBox(observation: observation,
-                                   rainLast24hMM: observation.kind == .rainLastHour ? rainLast24hMM : nil)
+                                   rainLast24hMM: observation.kind == .rainLastHour ? rainLast24hMM : nil,
+                                   history: chart(for: index))
                         .accessibilityIdentifier("detail.observation.\(index)")
                 }
             }
         }
+    }
+}
+
+extension ObservationSection {
+    private func chart(for index: Int) -> ObservationBox.Chart? {
+        guard let history else { return nil }
+        if index == rainIndex { return .rain(history) }
+        if index == waterIndex, HistoryChartMath.hasWater(history) { return .water(history) }
+        return nil
     }
 }
 
@@ -42,12 +60,21 @@ struct ObservationBox: View {
     /// Temporary wording until QA.
     static let estimatedTag = "AI 추정"
 
-    let observation: ValleyObservation
-    /// Shown as "24시간 강수 31.0mm" under the gauge (#90). `nil`: no line.
-    var rainLast24hMM: Double?
+    /// The "최근 3시간" chart at the bottom of the card (#107).
+    enum Chart {
+        case rain(ValleyHistory)
+        case water(ValleyHistory)
+    }
 
-    /// "24시간 강수 31.0mm". Temporary wording until QA.
-    static func rain24hText(_ mm: Double) -> String { "24시간 강수 \(ValleyFormat.rainfall(mm))" }
+    let observation: ValleyObservation
+    /// Shown as "24시간 강수 +31.0mm" under the gauge (#90). `nil`: no line.
+    var rainLast24hMM: Double?
+    var history: Chart?
+
+    /// "24시간 강수 +31.0mm" on screen (#107). Temporary wording until QA.
+    static func rain24hText(_ mm: Double) -> String { "24시간 강수 \(ValleyFormat.rainfallSigned(mm))" }
+    /// The same for VoiceOver, without the `+`.
+    static func rain24hSpoken(_ mm: Double) -> String { "24시간 강수 \(ValleyFormat.rainfall(mm))" }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -74,6 +101,16 @@ struct ObservationBox: View {
             Text(ObservationFormat.footnote(observation))
                 .font(.caption)
                 .foregroundStyle(Theme.Text.label)
+            switch history {
+            case let .rain(history):
+                HistoryChartSection(history: history, unit: "mm") { RainHistoryChart(history: history) }
+                    .padding(.top, 10)
+            case let .water(history):
+                HistoryChartSection(history: history, unit: "m") { WaterHistoryChart(history: history) }
+                    .padding(.top, 10)
+            case nil:
+                EmptyView()
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
@@ -89,7 +126,7 @@ struct ObservationBox: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(ObservationFormat.accessibilityLabel(observation))
         // Read after the sentence above; the sentence itself stays as before (#11).
-        .accessibilityValue(rainLast24hMM.map(Self.rain24hText) ?? "")
+        .accessibilityValue(spokenExtras)
     }
 }
 
@@ -132,5 +169,19 @@ struct AIExplanationBox: View {
             ObservationSection(observations: [])
         }
         .padding()
+    }
+}
+
+extension ObservationBox {
+    /// "24시간 강수 58.5mm, 최근 3시간 0.0mm에서 32.5mm" (#90, #107).
+    var spokenExtras: String {
+        var parts: [String] = []
+        if let rainLast24hMM { parts.append(Self.rain24hSpoken(rainLast24hMM)) }
+        switch history {
+        case let .rain(history): parts.append(HistoryChartMath.rainSpoken(history))
+        case let .water(history): parts.append(HistoryChartMath.waterSpoken(history))
+        case nil: break
+        }
+        return parts.joined(separator: ", ")
     }
 }

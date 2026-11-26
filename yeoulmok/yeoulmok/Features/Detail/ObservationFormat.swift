@@ -92,7 +92,8 @@ nonisolated enum ObservationFormat {
 
     private static func short(_ value: Double, _ observation: ValleyObservation) -> String {
         switch observation.kind {
-        case .rainLastHour: ValleyFormat.rainfall(value)
+        // `+` like the water rise (#107); the spoken sentence keeps the plain value.
+        case .rainLastHour: ValleyFormat.rainfallSigned(value)
         case .waterRise30Min, .estRise3h: ValleyFormat.waterRise(value)
         case .other: plain(value, unit: observation.unit)
         }

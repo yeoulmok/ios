@@ -36,11 +36,12 @@ struct RiskVisualsTests {
     }
 
     @Test(arguments: [
-        (0.0, 15.0, 0.0),
+        (0.0, 15.0, GaugeMath.minimumFill),     // #107: 0 still shows a sliver
         (7.5, 15.0, 1.0 / 3.0),
         (45.0, 15.0, 1.0),
         (100.0, 15.0, 1.0),     // capped
-        (-0.05, 0.10, 0.0),     // falling water fills nothing
+        (-0.05, 0.10, GaugeMath.minimumFill),   // falling water: the same sliver as 0
+        (0.1, 15.0, GaugeMath.minimumFill),     // a tiny value is never thinner than 0
     ])
     func fillFraction(value: Double, threshold: Double, expected: Double) {
         #expect(abs((GaugeMath.fill(value: value, threshold: threshold) ?? -1) - expected) < 1e-9)
