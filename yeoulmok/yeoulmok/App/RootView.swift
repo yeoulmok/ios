@@ -20,6 +20,8 @@ struct RootView: View {
     var pushRouter: PushRouter? = nil
 
     @State private var navigation = TabNavigation()
+    /// The 주의 popup's sound (#108).
+    @State private var noticeSound = NoticeSound()
     /// Set when a button on the notification screen is pressed, to leave it.
     @State private var onboardingFinished = false
 
@@ -59,12 +61,31 @@ struct RootView: View {
                 navigation.openDetailFromPush(valleyID: valleyID)
             }
         }
+        // #108: a 주의 push while open asks to look, with its sound once.
+        .alert(pushRouter?.notice?.title ?? "", isPresented: noticeBinding, presenting: pushRouter?.notice) { _ in
+            Button(Self.noticeConfirm, role: .cancel) { pushRouter?.dismissNotice() }
+            Button(Self.noticeOpenDetail) { pushRouter?.openNotice() }
+        } message: { notice in
+            Text(notice.body)
+        }
+        .onChange(of: pushRouter?.notice) { _, notice in
+            if notice != nil { noticeSound.play() }
+        }
         // #60: a 위험 · 대피 push covers everything until "확인했습니다".
         .fullScreenCover(item: alarmBinding) { alarm in
             AlarmView(alarm: alarm, repository: repository, cache: cache) {
                 pushRouter?.confirmAlarm()
             }
         }
+    }
+
+    /// Temporary wording until QA.
+    static let noticeConfirm = "확인"
+    static let noticeOpenDetail = "상세 보기"
+
+    private var noticeBinding: Binding<Bool> {
+        Binding(get: { pushRouter?.notice != nil },
+                set: { if !$0 { pushRouter?.dismissNotice() } })
     }
 
     private var alarmBinding: Binding<PushRouter.Alarm?> {
