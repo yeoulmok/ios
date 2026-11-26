@@ -25,6 +25,11 @@ struct YeoulmokApp: App {
                 if let valleyID = Self.mockPushValleyID {
                     appDelegate.pushRouter.open(valleyID: valleyID)
                 }
+                // DEBUG `-mockCautionValleyID <id>`: as if a 주의 push arrived while open (#108).
+                if let valleyID = Self.mockOption("-mockCautionValleyID") {
+                    appDelegate.pushRouter.showNotice(valleyID: valleyID, title: "금대리 계곡 · 주의",
+                                                      body: "상류에 비가 많이 오고 있어요")
+                }
                 if let valleyID = Self.mockOption("-mockAlarmValleyID") {
                     appDelegate.pushRouter.raiseAlarm(valleyID: valleyID, level: .danger, playsSound: false)
                 }

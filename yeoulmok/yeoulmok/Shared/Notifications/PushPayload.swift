@@ -31,4 +31,9 @@ nonisolated enum PushPayload {
     static func isAlarm(_ userInfo: [AnyHashable: Any]) -> Bool {
         level(from: userInfo)?.isUrgent == true
     }
+
+    /// 주의 pushes that arrive while the app is open show a confirm popup (#108).
+    static func isNotice(_ userInfo: [AnyHashable: Any]) -> Bool {
+        level(from: userInfo) == .caution
+    }
 }

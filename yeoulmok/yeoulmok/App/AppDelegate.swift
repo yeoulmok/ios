@@ -53,6 +53,18 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
             completionHandler(PushPresentation.alarmWhileOpen)
             return
         }
+        // #108: a 주의 push while the app is open shows a confirm popup with the 주의
+        // sound, instead of a banner that is silent in silent mode.
+        if PushPayload.isNotice(userInfo), let valleyID = PushPayload.valleyID(from: userInfo) {
+            let content = notification.request.content
+            let title = content.title, body = content.body
+            Task { @MainActor in
+                await pushArrived?()
+                pushRouter.showNotice(valleyID: valleyID, title: title, body: body)
+            }
+            completionHandler(PushPresentation.noticeWhileOpen)
+            return
+        }
         // A banner only: the screen on view keeps its data, the next load is fresh.
         Task { @MainActor in await pushArrived?() }
         completionHandler(PushPresentation.whileOpen)
@@ -93,4 +105,7 @@ nonisolated enum PushPresentation {
     /// 위험 · 대피 while open (#60): the app shows its own alarm screen and sound,
     /// so iOS only keeps it in Notification Center.
     static let alarmWhileOpen: UNNotificationPresentationOptions = [.list]
+    /// 주의 while open (#108): the app shows its own popup and sound, so iOS only keeps
+    /// it in Notification Center (no second sound).
+    static let noticeWhileOpen: UNNotificationPresentationOptions = [.list]
 }

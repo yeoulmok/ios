@@ -45,3 +45,22 @@ final class AlarmSound {
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
 }
+
+/// Plays the 주의 sound once when the 주의 popup opens (#108). Uses the `.ambient`
+/// category, so it follows the silent switch and mixes with other audio: a 주의 is a
+/// "please check", not an alarm (decided on 2026-11-26). It still plays at night while
+/// the app is open, since the user is looking at it.
+final class NoticeSound {
+    static let category: AVAudioSession.Category = .ambient
+
+    private var player: AVAudioPlayer?
+
+    func play() {
+        guard let name = AlarmSound.fileName(for: .caution),
+              let url = Bundle.main.url(forResource: name, withExtension: "caf") else { return }
+        try? AVAudioSession.sharedInstance().setCategory(Self.category, mode: .default)
+        player = try? AVAudioPlayer(contentsOf: url)
+        player?.numberOfLoops = 0
+        player?.play()
+    }
+}
