@@ -101,6 +101,8 @@ private struct UserDot: View {
     }
 }
 
+// Previews use the bundled mock data, which Release builds leave out (#102).
+#if DEBUG
 #Preview {
     let valleys = try! MockData.valleyList().valleys
     let user = SystemLocationPermission.mockLocation
@@ -109,3 +111,4 @@ private struct UserDot: View {
             .padding()
     }
 }
+#endif

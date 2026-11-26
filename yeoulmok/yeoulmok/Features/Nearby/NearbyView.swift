@@ -243,6 +243,8 @@ struct LocationDeniedView: View {
     }
 }
 
+// Previews use the bundled mock data, which Release builds leave out (#102).
+#if DEBUG
 #Preview("목록") {
     NavigationStack {
         NearbyView(repository: try! MockValleyRepository(),
@@ -255,3 +257,4 @@ struct LocationDeniedView: View {
         LocationDeniedView().padding().background(Theme.night)
     }
 }
+#endif

@@ -168,6 +168,8 @@ extension SearchView {
     }
 }
 
+// Previews use the bundled mock data, which Release builds leave out (#102).
+#if DEBUG
 #Preview {
     NavigationStack {
         SearchView(repository: try! MockValleyRepository())
@@ -179,3 +181,4 @@ extension SearchView {
         SearchView(repository: try! MockValleyRepository(manyValleys: true, pageDelay: .milliseconds(600)))
     }
 }
+#endif

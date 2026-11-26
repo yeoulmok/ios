@@ -111,6 +111,9 @@ struct RootView: View {
     }
 }
 
+// Previews use the bundled mock data, which Release builds leave out (#102).
+#if DEBUG
 #Preview {
     RootView(repository: try! MockValleyRepository())
 }
+#endif

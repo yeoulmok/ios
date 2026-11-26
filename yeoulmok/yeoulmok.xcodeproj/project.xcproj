@@ -50,6 +50,7 @@
         "CURRENT_PROJECT_VERSION": "2",
         "DEVELOPMENT_TEAM": "SDBJF5F47N",
         "ENABLE_PREVIEWS": "YES",
+        "EXCLUDED_SOURCE_FILE_NAMES[config=Release]": "$(SRCROOT)/yeoulmok/Mock/*",
         "GENERATE_INFOPLIST_FILE": "YES",
         "INFOPLIST_KEY_CFBundleDisplayName": "여울목",
         "INFOPLIST_KEY_UIApplicationSceneManifest_Generation": "YES",

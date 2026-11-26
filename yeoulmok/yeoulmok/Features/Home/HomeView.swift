@@ -141,8 +141,11 @@ struct HomeView: View {
     }
 }
 
+// Previews use the bundled mock data, which Release builds leave out (#102).
+#if DEBUG
 #Preview {
     NavigationStack {
         HomeView(repository: try! MockValleyRepository())
     }
 }
+#endif

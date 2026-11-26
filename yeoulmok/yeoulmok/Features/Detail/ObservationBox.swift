@@ -160,6 +160,8 @@ struct AIExplanationBox: View {
     }
 }
 
+// Previews use the bundled mock data, which Release builds leave out (#102).
+#if DEBUG
 #Preview("주의 · 판정 불가") {
     let details = try! MockData.valleyDetails(bundle: .main)
     ScrollView {
@@ -171,6 +173,7 @@ struct AIExplanationBox: View {
         .padding()
     }
 }
+#endif
 
 extension ObservationBox {
     /// "24시간 강수 58.5mm, 최근 3시간 0.0mm에서 32.5mm" (#90, #107).

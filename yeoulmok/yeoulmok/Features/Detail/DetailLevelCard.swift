@@ -60,6 +60,8 @@ struct DetailLevelCard: View {
     }
 }
 
+// Previews use the bundled mock data, which Release builds leave out (#102).
+#if DEBUG
 #Preview {
     let details = try! MockData.valleyDetails(bundle: .main)
     ScrollView {
@@ -70,3 +72,4 @@ struct DetailLevelCard: View {
     }
     .background(PhotoBackdrop(style: .normal))
 }
+#endif
