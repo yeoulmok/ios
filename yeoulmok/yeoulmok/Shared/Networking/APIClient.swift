@@ -16,10 +16,21 @@ nonisolated struct APIClient: Sendable {
     let baseURL: URL
     let session: URLSession
 
-    init(baseURL: URL, session: URLSession = .shared) {
+    init(baseURL: URL, session: URLSession = APIClient.noCacheSession) {
         self.baseURL = baseURL
         self.session = session
     }
+
+    /// The session for every server request: no HTTP cache (#101). `URLSession.shared`
+    /// may keep answers in a file on the device, including `/me/valleys` (the valleys a
+    /// user follows, i.e. places they go). The app keeps its own copies instead: 60 s in
+    /// memory (`CachingValleyRepository`) and the offline copy (`ValleyCache`).
+    static let noCacheSession: URLSession = {
+        let configuration = URLSessionConfiguration.default
+        configuration.urlCache = nil
+        configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
+        return URLSession(configuration: configuration)
+    }()
 
     /// - Parameters:
     ///   - path: Relative to `baseURL`, e.g. `"valleys"` or `"me/subscriptions/3"`.

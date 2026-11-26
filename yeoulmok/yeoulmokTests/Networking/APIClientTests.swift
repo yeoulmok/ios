@@ -3,6 +3,14 @@ import Testing
 @testable import yeoulmok
 
 struct APIClientTests {
+    /// #101: server answers are never written to the HTTP cache on the device.
+    @Test func appRequestsUseNoHTTPCache() {
+        let client = APIClient(baseURL: URL(string: "https://example.invalid/api")!)
+        #expect(client.session.configuration.urlCache == nil)
+        #expect(client.session.configuration.requestCachePolicy == .reloadIgnoringLocalCacheData)
+        #expect(client.session !== URLSession.shared)
+    }
+
     private struct Echo: Decodable, Equatable { let ok: Bool }
     private struct Body: Encodable, Sendable {
         let apnsToken: String?
