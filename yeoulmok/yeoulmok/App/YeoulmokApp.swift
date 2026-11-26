@@ -14,6 +14,11 @@ struct YeoulmokApp: App {
     /// First-launch notification screen (#22).
     private let onboardingStore = Self.makeOnboardingStore()
 
+    init() {
+        // #100: mock runs (UI tests) start without AI consent every launch.
+        if Self.usesMockData { AskConsentStore.shared = .fresh() }
+    }
+
     var body: some Scene {
         WindowGroup {
             RootView(repository: repository, cache: cache, makeLocationPermission: {
