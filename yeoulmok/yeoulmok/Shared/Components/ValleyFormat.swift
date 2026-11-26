@@ -12,6 +12,13 @@ nonisolated enum ValleyFormat {
         return String(format: "%.1fmm", mm)
     }
 
+    /// Rainfall with a `+` on the alert detail (#107): `+18.0mm`, `+0.0mm`, so it reads
+    /// like the water rise next to it. A missing value stays `-`.
+    static func rainfallSigned(_ mm: Double?) -> String {
+        guard let mm else { return missing }
+        return "+" + rainfall(mm)
+    }
+
     /// Water level change with two decimals and a sign: `+0.22m`, `+0.00m`, `-0.05m`.
     /// Values that round to zero show as `+0.00m`, so it reads as a change, not a level (#83).
     static func waterRise(_ meters: Double?) -> String {

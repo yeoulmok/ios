@@ -54,4 +54,13 @@ struct ValleyFormatTests {
         let now = try #require(ServerDate.parse("2026-11-07T22:00"))
         #expect(ValleyFormat.observedTime(observed, now: now) == "21:50")
     }
+
+    /// #107: the detail shows rain with a `+`; missing stays `-` (never `+-`).
+    @Test func signedRainfall() {
+        #expect(ValleyFormat.rainfallSigned(18) == "+18.0mm")
+        #expect(ValleyFormat.rainfallSigned(0) == "+0.0mm")
+        #expect(ValleyFormat.rainfallSigned(nil) == "-")
+        #expect(ObservationBox.rain24hText(31) == "24시간 강수 +31.0mm")
+        #expect(ObservationBox.rain24hSpoken(31) == "24시간 강수 31.0mm")
+    }
 }

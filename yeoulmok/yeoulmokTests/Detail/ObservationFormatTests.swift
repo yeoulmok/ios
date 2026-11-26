@@ -113,7 +113,8 @@ struct ObservationCardFormatTests {
     }
 
     @Test func shortNumbers() {
-        #expect(ObservationFormat.shortValue(observation(.rainLastHour, value: 18)) == "18.0mm")
+        // #107: rain carries a `+` on the detail, like the water rise.
+        #expect(ObservationFormat.shortValue(observation(.rainLastHour, value: 18)) == "+18.0mm")
         #expect(ObservationFormat.shortValue(observation(.waterRise30Min, value: 0.06)) == "+0.06m")
         #expect(ObservationFormat.shortThreshold(observation(.waterRise30Min, value: 0.06, threshold: 0.1)) == "0.10m")
         #expect(ObservationFormat.shortThreshold(observation(.rainLastHour, value: 1, threshold: nil)) == nil)
