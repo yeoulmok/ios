@@ -95,6 +95,11 @@ actor CachingValleyRepository: ValleyRepository {
         return answer
     }
 
+    /// Asks for the detail and keeps it; a failure is dropped (the real call asks again).
+    func prefetchDetail(id: Int) async {
+        _ = try? await valleyDetail(id: id)
+    }
+
     // MARK: Passed through
 
     func valleyPage(_ request: ValleyPageRequest) async throws -> ValleyListResponse {
