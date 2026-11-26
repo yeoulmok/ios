@@ -8,6 +8,10 @@ import Foundation
 /// a cache. Reading or writing never throws: a missing or broken file is just "no cache".
 actor ValleyCache {
     private let directory: URL
+    /// What each file holds, as last written by this run (#103). Screens save every
+    /// answer they get, and within the 60 s of `CachingValleyRepository` that is the
+    /// same answer again: then the file is left alone.
+    private var written: [String: Data] = [:]
 
     /// Tests pass their own folder.
     init(directory: URL) {
@@ -53,9 +57,20 @@ actor ValleyCache {
         return try? JSONDecoder.yeoulmok().decode(type, from: data)
     }
 
+    /// Compares the whole content, not `updated_at`: subscribing changes a detail
+    /// without changing its time. Writes again if iOS removed the file meanwhile.
     private func write(_ value: some Encodable, to name: String) {
         guard let data = try? JSONEncoder.yeoulmok().encode(value) else { return }
+        let file = directory.appending(path: name)
+        if written[name] == data, FileManager.default.fileExists(atPath: file.path(percentEncoded: false)) {
+            return
+        }
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        try? data.write(to: directory.appending(path: name), options: .atomic)
+        do {
+            try data.write(to: file, options: .atomic)
+            written[name] = data
+        } catch {
+            written[name] = nil
+        }
     }
 }
