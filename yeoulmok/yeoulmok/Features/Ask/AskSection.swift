@@ -16,6 +16,13 @@ struct AskSection: View {
     static let placeholder = "계곡에 대해 물어보세요"
     static let loadingText = "답을 만들고 있어요"
     static let sendTitle = "보내기"
+    /// Always under the field (#100). Temporary wording until QA.
+    static let notice = "질문은 AI에 전달돼요 · 개인정보는 적지 마세요"
+    /// Before the first question (#100, decided 2026-11-26).
+    static let consentTitle = "AI에 질문을 보낼까요?"
+    static let consentMessage = "질문은 답을 만들기 위해 외부 AI 서비스(Anthropic Claude)로 전달돼요. 이름 · 전화번호 같은 개인정보는 적지 마세요. 질문은 서버에 저장하지 않아요."
+    static let consentAgree = "동의하고 보내기"
+    static let consentCancel = "취소"
 
     @Bindable var model: AskViewModel
     @FocusState private var fieldFocused: Bool
@@ -33,6 +40,19 @@ struct AskSection: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
         .glassCard()
+        .alert(Self.consentTitle, isPresented: consentShown) {
+            Button(Self.consentCancel, role: .cancel) { model.cancelConsent() }
+            Button(Self.consentAgree) { Task { await model.agreeAndSend() } }
+        } message: {
+            Text(Self.consentMessage)
+        }
+    }
+
+    /// Only the buttons decide: SwiftUI sets this to `false` when the popup closes, and
+    /// "동의하고 보내기" sends in a `Task` that runs after that, so cancelling here would
+    /// drop the question before it is sent.
+    private var consentShown: Binding<Bool> {
+        Binding(get: { model.pendingQuestion != nil }, set: { _ in })
     }
 
     private var suggestions: some View {
@@ -82,12 +102,19 @@ struct AskSection: View {
             .padding(.leading, 14)
             .padding(.trailing, 2)
             .listRowSurface()
-            if !model.draft.isEmpty {
-                // Shows the 200-character limit before the server has to say it.
-                let count = AskViewModel.trimmed(model.draft).count
-                Text("\(count)/\(AskViewModel.maxLength)")
+            HStack(alignment: .firstTextBaseline) {
+                Text(Self.notice)
                     .font(.caption)
-                    .foregroundStyle(count > AskViewModel.maxLength ? Theme.stale : Theme.Text.label)
+                    .foregroundStyle(Theme.Text.label)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityIdentifier("ask.notice")
+                if !model.draft.isEmpty {
+                    // Shows the 200-character limit before the server has to say it.
+                    let count = AskViewModel.trimmed(model.draft).count
+                    Text("\(count)/\(AskViewModel.maxLength)")
+                        .font(.caption)
+                        .foregroundStyle(count > AskViewModel.maxLength ? Theme.stale : Theme.Text.label)
+                }
             }
         }
     }
@@ -170,7 +197,7 @@ private struct AnswerView<QuestionLine: View>: View {
 
 #Preview {
     ScrollView {
-        AskSection(model: AskViewModel(valleyID: 1, repository: try! MockValleyRepository()))
+        AskSection(model: AskViewModel(valleyID: 1, repository: try! MockValleyRepository(), consent: .fresh()))
             .padding()
     }
     .background(Theme.night)

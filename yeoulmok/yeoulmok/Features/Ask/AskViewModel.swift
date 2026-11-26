@@ -26,13 +26,19 @@ final class AskViewModel {
     private(set) var state: State = .idle
     /// Text in the field.
     var draft = ""
+    /// A question waiting for the user's consent (#100): the consent popup is on
+    /// screen while this is set. Nothing has been sent.
+    private(set) var pendingQuestion: String?
 
     private let valleyID: Int
     private let repository: any ValleyRepository
+    private let consent: AskConsentStore
 
-    init(valleyID: Int, repository: any ValleyRepository) {
+    /// - Parameter consent: `nil` is the app's own (`AskConsentStore.shared`).
+    init(valleyID: Int, repository: any ValleyRepository, consent: AskConsentStore? = nil) {
         self.valleyID = valleyID
         self.repository = repository
+        self.consent = consent ?? .shared
     }
 
     var isAsking: Bool {
@@ -44,19 +50,47 @@ final class AskViewModel {
         !isAsking && Self.isValid(draft)
     }
 
-    /// Sends the field's text; the field is cleared once sent.
+    /// Sends the field's text; the field is cleared once sent. Before the first
+    /// consent the text stays in the field, so cancelling loses nothing.
     func sendDraft() async {
         guard canSendDraft else { return }
+        guard consent.isGiven else {
+            pendingQuestion = Self.trimmed(draft)
+            return
+        }
         let question = draft
         draft = ""
         await ask(question)
     }
 
     /// Sends a question (from the field or a suggestion). Does nothing while another
-    /// question is on its way, or for an empty or too long question.
+    /// question is on its way, or for an empty or too long question. Without consent
+    /// it only asks for it (#100).
     func ask(_ question: String) async {
         let trimmed = Self.trimmed(question)
         guard !isAsking, Self.isValid(trimmed) else { return }
+        guard consent.isGiven else {
+            pendingQuestion = trimmed
+            return
+        }
+        await send(trimmed)
+    }
+
+    /// "동의하고 보내기": remembered on this device, then the waiting question is sent.
+    func agreeAndSend() async {
+        guard let question = pendingQuestion else { return }
+        pendingQuestion = nil
+        consent.isGiven = true
+        if Self.trimmed(draft) == question { draft = "" }
+        await send(question)
+    }
+
+    /// "취소": nothing is sent and nothing is remembered.
+    func cancelConsent() {
+        pendingQuestion = nil
+    }
+
+    private func send(_ trimmed: String) async {
         state = .asking(question: trimmed)
         do {
             state = .answered(try await repository.ask(valleyID: valleyID, question: trimmed))

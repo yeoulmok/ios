@@ -4,6 +4,11 @@ import Testing
 
 @MainActor
 struct AskViewModelTests {
+    /// These tests are about sending once allowed; the consent itself (#100) is in
+    /// `AskConsentTests`, each with a store of its own.
+    init() {
+        AskConsentStore.shared.isGiven = true
+    }
     nonisolated private static func answer(to question: String, fallback: Bool = false) -> AskAnswer {
         AskAnswer(updatedAt: Date(timeIntervalSince1970: 1_795_000_000), valleyID: 1, question: question, answer: "답: \(question)",
                   isAIFallback: fallback, level: .caution, observedAt: nil,
