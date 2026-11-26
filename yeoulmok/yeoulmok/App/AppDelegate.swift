@@ -17,6 +17,9 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         // Must be set before launch ends, or a push that opened the app is missed (#20).
         UNUserNotificationCenter.current().delegate = self
+        // #101: builds before 1.0 (3) let iOS keep server answers in its HTTP cache file,
+        // `/me/valleys` included. The app no longer writes there; clear what is left.
+        URLCache.shared.removeAllCachedResponses()
         return true
     }
 
