@@ -45,6 +45,12 @@ final class ValleyDetailViewModel {
         self.cache = cache
     }
 
+    /// Pull to refresh: never a kept answer (#103), then the same as `load`.
+    func refresh() async {
+        await repository.invalidateCache()
+        await load()
+    }
+
     /// Loads the detail. Never goes back to `.loading`. On failure (feature spec 3-1):
     /// - a detail already shown: keep it and set `offlineAsOf`;
     /// - nothing shown, connection trouble, and a saved detail: show it, set `offlineAsOf`;

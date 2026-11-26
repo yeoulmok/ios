@@ -21,6 +21,7 @@ struct YeoulmokApp: App {
                     ? SystemLocationPermission.mockLocation : nil)
             }, onboardingStore: onboardingStore, pushRouter: appDelegate.pushRouter)
             .task {
+                appDelegate.pushArrived = { [repository] in await repository.invalidateCache() }
                 if let valleyID = Self.mockPushValleyID {
                     appDelegate.pushRouter.open(valleyID: valleyID)
                 }
@@ -90,10 +91,13 @@ struct YeoulmokApp: App {
     /// UI tests (`-useMockData`, `-mockSubscriptionFails`, `-mockLoadFailsOnce`,
     /// `-mockOfflineAfterFirstLoad`, `-mockManyValleys`) and the unit tests' host app,
     /// so tests never depend on the server's data or register devices on it.
+    ///
+    /// The server's answers are kept for 60 s (#103). The mock runs are not wrapped:
+    /// UI tests like `-mockOfflineAfterFirstLoad` need every load to reach the mock.
     private static func makeRepository() -> any ValleyRepository {
         // `registrar` is nil exactly when `usesMockData` is true.
         guard let registrar else { return makeMockRepository() }
-        return ServerValleyRepository(client: client, registrar: registrar)
+        return CachingValleyRepository(wrapping: ServerValleyRepository(client: client, registrar: registrar))
     }
 
     /// One client and one registrar, shared by the repository and the push token.

@@ -9,6 +9,9 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     var pushTokens: PushTokenReceiver?
     /// Where a tapped push goes; `RootView` opens the detail from it (#20).
     let pushRouter = PushRouter()
+    /// Called for every push, before its screen opens: forgets the kept answers so
+    /// the alarm and the detail show fresh data (#103). Set by `YeoulmokApp`.
+    var pushArrived: (() async -> Void)?
 
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
@@ -44,11 +47,14 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         if PushPayload.isAlarm(userInfo), let valleyID = PushPayload.valleyID(from: userInfo),
            let level = PushPayload.level(from: userInfo) {
             Task { @MainActor in
+                await pushArrived?()
                 pushRouter.raiseAlarm(valleyID: valleyID, level: level, playsSound: true)
             }
             completionHandler(PushPresentation.alarmWhileOpen)
             return
         }
+        // A banner only: the screen on view keeps its data, the next load is fresh.
+        Task { @MainActor in await pushArrived?() }
         completionHandler(PushPresentation.whileOpen)
     }
 
@@ -66,6 +72,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
             // The router lives on the main actor; RootView opens the detail (or, for
             // 위험 · 대피, the full-screen alarm first, #60) when it changes.
             Task { @MainActor in
+                await pushArrived?()
                 if let level, level.isUrgent {
                     pushRouter.raiseAlarm(valleyID: valleyID, level: level, playsSound: false)
                 } else {

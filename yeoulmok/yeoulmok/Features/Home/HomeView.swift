@@ -117,7 +117,7 @@ struct HomeView: View {
             .padding(.horizontal, 20)
             .padding(.vertical, 8)
         }
-        .refreshable { await viewModel.load() }
+        .refreshable { await viewModel.refresh() }
         // No hard top edge here: the photo card starts at the top, so the band showed
         // even before scrolling (#83). Only the settings button sits above it.
     }
@@ -137,7 +137,7 @@ struct HomeView: View {
                 .padding()
                 .containerRelativeFrame([.horizontal, .vertical])
         }
-        .refreshable { await viewModel.load() }
+        .refreshable { await viewModel.refresh() }
     }
 }
 

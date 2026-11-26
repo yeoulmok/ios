@@ -71,7 +71,7 @@ struct ValleyDetailView: View {
                 .padding()
                 .containerRelativeFrame([.horizontal, .vertical])
             }
-            .refreshable { await viewModel.load() }
+            .refreshable { await viewModel.refresh() }
         }
     }
 
@@ -112,7 +112,7 @@ struct ValleyDetailView: View {
         .scrollDismissesKeyboard(.interactively)
         .topBarScrollEdge()
         // Keeps the detail while reloading; a failed refresh keeps it too (view model).
-        .refreshable { await viewModel.load() }
+        .refreshable { await viewModel.refresh() }
     }
 
     private var isFailed: Bool {

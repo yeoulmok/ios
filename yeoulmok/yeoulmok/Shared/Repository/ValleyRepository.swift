@@ -35,4 +35,12 @@ nonisolated protocol ValleyRepository: Sendable {
     /// `GET /valleys/{id}/history?hours=` (APP-DTL-09): one row every 10 minutes, for the
     /// detail's "최근 3시간" card.
     func history(valleyID: Int, hours: Int) async throws -> ValleyHistory
+
+    /// Forget saved answers, so the next requests go to the server (#103): pull to
+    /// refresh and pushes call this. Repositories without a cache do nothing.
+    func invalidateCache() async
+}
+
+extension ValleyRepository {
+    nonisolated func invalidateCache() async {}
 }
