@@ -41,8 +41,12 @@ nonisolated enum ServerDate {
 extension JSONEncoder {
     /// Writes models in the server's own JSON shape and time format, so
     /// `JSONDecoder.yeoulmok()` reads them back unchanged.
+    /// Keys are sorted, so the same value always gives the same bytes: `ValleyCache`
+    /// compares them to skip writing a file that has not changed (#103). Without it
+    /// the key order differed from one call to the next.
     nonisolated static func yeoulmok() -> JSONEncoder {
         let encoder = JSONEncoder()
+        encoder.outputFormatting = .sortedKeys
         encoder.dateEncodingStrategy = .custom { date, encoder in
             var container = encoder.singleValueContainer()
             try container.encode(ServerDate.string(from: date))

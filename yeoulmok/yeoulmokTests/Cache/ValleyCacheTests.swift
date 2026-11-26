@@ -4,8 +4,13 @@ import Testing
 
 struct ValleyCacheTests {
     /// Each test gets its own empty folder.
-    private let cache = ValleyCache(directory: FileManager.default.temporaryDirectory
-        .appending(path: "ValleyCacheTests-\(UUID().uuidString)", directoryHint: .isDirectory))
+    private let directory = FileManager.default.temporaryDirectory
+        .appending(path: "ValleyCacheTests-\(UUID().uuidString)", directoryHint: .isDirectory)
+    private let cache: ValleyCache
+
+    init() {
+        cache = ValleyCache(directory: directory)
+    }
 
     @Test func nothingSavedIsNil() async {
         #expect(await cache.subscribedValleys() == nil)
@@ -42,6 +47,50 @@ struct ValleyCacheTests {
         await cache.saveSubscribedValleys(newer)
 
         #expect(await cache.subscribedValleys() == newer)
+    }
+
+    // MARK: Writing only what changed (#103)
+
+    private func modified(_ name: String) throws -> Date {
+        let attributes = try FileManager.default.attributesOfItem(
+            atPath: directory.appending(path: name).path(percentEncoded: false))
+        return try #require(attributes[.modificationDate] as? Date)
+    }
+
+    @Test func sameContentIsNotWrittenAgain() async throws {
+        let detail = try #require(try MockData.valleyDetails().first)
+        await cache.saveDetail(detail)
+        let first = try modified("detail-\(detail.id).json")
+        try await Task.sleep(for: .milliseconds(50))
+
+        await cache.saveDetail(detail)
+
+        #expect(try modified("detail-\(detail.id).json") == first)
+    }
+
+    /// Subscribing changes the detail but not its `updated_at`: still written.
+    @Test func changedSubscriptionIsWritten() async throws {
+        var detail = try #require(try MockData.valleyDetails().first)
+        await cache.saveDetail(detail)
+        let first = try modified("detail-\(detail.id).json")
+        try await Task.sleep(for: .milliseconds(50))
+
+        detail.isSubscribed.toggle()
+        await cache.saveDetail(detail)
+
+        #expect(try modified("detail-\(detail.id).json") > first)
+        #expect(await cache.detail(id: detail.id)?.isSubscribed == detail.isSubscribed)
+    }
+
+    /// iOS may empty Caches while the app runs: the same answer is written again.
+    @Test func removedFileIsWrittenAgain() async throws {
+        let list = try MockData.valleyList()
+        await cache.saveSubscribedValleys(list)
+        try FileManager.default.removeItem(at: directory.appending(path: "subscribed.json"))
+
+        await cache.saveSubscribedValleys(list)
+
+        #expect(await cache.subscribedValleys() == list)
     }
 
     @Test func timesAreSavedInTheServerFormat() throws {
