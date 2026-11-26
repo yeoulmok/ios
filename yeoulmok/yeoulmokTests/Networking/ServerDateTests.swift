@@ -23,6 +23,25 @@ struct ServerDateTests {
         #expect(inNewYork == inSeoul)
     }
 
+    /// The formatters are shared (#103): reading from many threads at once gives the
+    /// same answers as one at a time.
+    @Test func sameAnswersFromManyThreadsAtOnce() async throws {
+        let texts = (0..<1000).map { String(format: "2026-11-%02dT%02d:%02d", 1 + $0 % 28, $0 % 24, $0 % 60) }
+        let oneByOne = texts.map(ServerDate.parse)
+
+        let together = await withTaskGroup(of: (Int, Date?).self) { group in
+            for (index, text) in texts.enumerated() {
+                group.addTask { (index, ServerDate.parse(text)) }
+            }
+            var answers = [Date?](repeating: nil, count: texts.count)
+            for await (index, date) in group { answers[index] = date }
+            return answers
+        }
+
+        #expect(together == oneByOne)
+        #expect(oneByOne.allSatisfy { $0 != nil })
+    }
+
     @Test func acceptsSeconds() throws {
         let withSeconds = try #require(ServerDate.parse("2026-11-07T22:00:00"))
         #expect(withSeconds == ServerDate.parse("2026-11-07T22:00"))
