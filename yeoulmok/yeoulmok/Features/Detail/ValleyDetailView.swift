@@ -122,6 +122,8 @@ struct ValleyDetailView: View {
     }
 }
 
+// Previews use the bundled mock data, which Release builds leave out (#102).
+#if DEBUG
 #Preview("주의") {
     NavigationStack {
         ValleyDetailView(valleyID: 1, repository: try! MockValleyRepository())
@@ -139,3 +141,4 @@ struct ValleyDetailView: View {
         ValleyDetailView(valleyID: 99, repository: try! MockValleyRepository())
     }
 }
+#endif

@@ -59,6 +59,8 @@ struct ValleyCard: View {
     }
 }
 
+// Previews use the bundled mock data, which Release builds leave out (#102).
+#if DEBUG
 #Preview("Mock valleys") {
     ScrollView {
         VStack(spacing: 8) {
@@ -70,3 +72,4 @@ struct ValleyCard: View {
     }
     .background(Theme.night)
 }
+#endif

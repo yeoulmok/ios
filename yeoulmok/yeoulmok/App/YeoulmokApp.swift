@@ -125,6 +125,7 @@ struct YeoulmokApp: App {
     }
 
     private static func makeMockRepository() -> any ValleyRepository {
+        #if DEBUG
         do {
             return try MockValleyRepository(failsSubscriptionChanges: launchedWith("-mockSubscriptionFails"),
                                             failsFirstLoad: launchedWith("-mockLoadFailsOnce"),
@@ -137,6 +138,11 @@ struct YeoulmokApp: App {
             // The mock JSON ships inside the app, so this only fails if the build is broken.
             fatalError("Mock data is missing from the app bundle: \(error)")
         }
+        #else
+        // Release builds have no mock data (#102), and `usesMockData` is only true in
+        // DEBUG builds (launch options and the unit test host are read there only).
+        fatalError("Mock data is only in DEBUG builds")
+        #endif
     }
 
     /// True when this app was launched only to host the unit tests (yeoulmokTests).

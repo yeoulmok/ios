@@ -165,6 +165,8 @@ struct MetricTile: View {
     }
 }
 
+// Previews use the bundled mock data, which Release builds leave out (#102).
+#if DEBUG
 #Preview {
     let valleys = try! MockData.valleyList().valleys
     let featured = FeaturedValley.pick(from: valleys.filter(\.isSubscribed), near: nil)!
@@ -173,3 +175,4 @@ struct MetricTile: View {
     }
     .background(PhotoBackdrop(style: .normal))
 }
+#endif

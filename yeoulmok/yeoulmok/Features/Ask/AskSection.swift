@@ -195,6 +195,8 @@ private struct AnswerView<QuestionLine: View>: View {
     }
 }
 
+// Previews use the bundled mock data, which Release builds leave out (#102).
+#if DEBUG
 #Preview {
     ScrollView {
         AskSection(model: AskViewModel(valleyID: 1, repository: try! MockValleyRepository(), consent: .fresh()))
@@ -202,3 +204,4 @@ private struct AnswerView<QuestionLine: View>: View {
     }
     .background(Theme.night)
 }
+#endif

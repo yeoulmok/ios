@@ -47,6 +47,8 @@ struct SearchResultRow: View {
     }
 }
 
+// Previews use the bundled mock data, which Release builds leave out (#102).
+#if DEBUG
 #Preview("Mock valleys") {
     NavigationStack {
         VStack(spacing: 8) {
@@ -58,3 +60,4 @@ struct SearchResultRow: View {
         .background(Theme.night)
     }
 }
+#endif
