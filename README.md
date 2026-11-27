@@ -2,7 +2,7 @@
 
 <p align="center"><img src="docs/images/intro.jpg" width="600" alt="여울목 소개: 계곡에 가기 전, 물부터 확인하세요"></p>
 
-계곡·하천의 홍수 위험을 감지해 실시간으로 알려 주는 서비스 **여울목**의 iOS 앱입니다.
+계곡 상류의 비와 하류의 물높이로 홍수 위험 단계를 판단해 알려 주는 서비스 **여울목**의 iOS 앱입니다.
 
 - 서버: [yeoulmok/server](https://github.com/yeoulmok/server)
 - 기획·문서: Notion 프로젝트 페이지 (기능 정의서, API 명세서, 개발 협업 가이드, AI 협업 가이드)
